@@ -24,6 +24,7 @@ jobseeker/
   sources/          one module per job board (see below)
   matching.py       title / location / work-mode filters and scoring
   knockout.py       knock-out warnings: requirements in a posting or form you don't meet
+  network.py        LinkedIn connections export: who you know at a company, referral likelihood
   radar.py          a run: fetch, filter, score, record, write digest
   applications.py   prep: resolve a job, fetch its form, auto-answer, form.toml I/O
   answers.py        profile.toml and the answer rules
@@ -71,4 +72,5 @@ Then import it at the bottom of `jobseeker/sources/__init__.py`, add a fixture a
 
 - No auto-submission, ever. Pull requests that add it won't be merged.
 - Only use endpoints that the board's public job pages already use, and keep request volume low.
-- Never commit personal data. `config.toml`, `profile.toml` and workspace data are gitignored; use `jobseeker demo` data in screenshots.
+- Never commit personal data. `config.toml`, `profile.toml`, `contacts.toml`, `linkedin/` and workspace data are gitignored; use `jobseeker demo` data in screenshots.
+- Never automate LinkedIn (or any site that forbids it): only its official data export and links the user opens.

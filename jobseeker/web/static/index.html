@@ -102,6 +102,12 @@ th.sortable:hover { color: var(--text); }
 th .arrow { color: var(--accent); }
 tr.group td { background: var(--bg); font-weight: 600; font-size: 12px; color: var(--muted); cursor: default; padding-top: 12px; }
 tr.group:hover { background: none; }
+.lead { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+.lead ul { margin: 6px 0; padding-left: 18px; color: var(--muted); font-size: 12px; }
+.pill.lk-High { background: var(--good-soft); color: var(--good); border-color: transparent; }
+.pill.lk-Medium { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.lead textarea { font-size: 12px; }
+.links a { color: var(--accent); }
 .settings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .settings h3 { margin: 0 0 4px; font-size: 15px; }
 .settings h4 { margin: 18px 0 6px; font-size: 13px; }
@@ -360,7 +366,7 @@ function renderMatches() {
       html += `<tr class="group"><td colspan="7">${day ? fmtDate(day) : "Date unknown"} · ${n} job${n > 1 ? "s" : ""}</td></tr>`;
     }
     html += `<tr data-key="${esc(m.key)}" class="${SEL === m.key ? "sel" : ""}">
-      <td class="num muted hide-sm">${m.n}</td><td class="num">${m.score.toFixed(1)}</td><td>${esc(m.company)}</td>
+      <td class="num muted hide-sm">${m.n}</td><td class="num">${m.score.toFixed(1)}</td><td>${esc(m.company)}${m.people ? ` <span class="pill" title="${m.people} of your LinkedIn connections work here">👥 ${m.people}</span>` : ""}</td>
       <td>${esc(m.title)} ${m.new ? '<span class="pill new">new</span>' : ""}</td>
       <td class="hide-sm">${esc(modeShort(m.mode))}</td><td class="hide-sm muted" style="white-space:nowrap">${esc(fmtDate(m.found))}</td>
       <td>${pill(m.status)} ${m.todo ? `<span class="pill todo">${m.todo} TODO</span>` : ""} ${koPill(m.flags)}</td></tr>`;
@@ -423,6 +429,7 @@ function renderDetail() {
     <div class="subtabs">
       ${hasForm ? `<button data-sub="form">Application form</button>` : ""}
       <button data-sub="desc">Description</button>
+      <button data-sub="people">People</button>
       ${prepped ? `<button data-sub="cover">Cover letter</button>` : ""}
       ${prepped ? `<button data-sub="ref">Referral note</button>` : ""}
     </div>
@@ -430,7 +437,7 @@ function renderDetail() {
   const subs = [...$(PANE).querySelectorAll(".subtabs button")];
   if (!subs.some(b => b.dataset.sub === SUB)) SUB = subs[0].dataset.sub;
   subs.forEach(b => { b.classList.toggle("on", b.dataset.sub === SUB); b.onclick = () => { SUB = b.dataset.sub; renderDetail(); }; });
-  ({form: renderForm, desc: renderDesc, ref: renderRef, cover: renderCover})[SUB]();
+  ({form: renderForm, desc: renderDesc, ref: renderRef, cover: renderCover, people: renderPeople})[SUB]();
   renderIds();
 
   $(PANE).querySelector("#d-prep")?.addEventListener("click", e => prep(false, e.target));
@@ -543,6 +550,55 @@ function renderCover() {
       await refresh();
     } catch (e) { toast(e.message); btn.disabled = false; }
   };
+}
+
+// ------------------------------------------------------------------ people (LinkedIn connections)
+async function renderPeople() {
+  const key = DET.job.key;
+  $("#d-body").innerHTML = `<div class="muted">Looking through your connections…</div>`;
+  let d;
+  try { d = await api("/api/people?key=" + encodeURIComponent(key)); } catch (e) { $("#d-body").textContent = e.message; return; }
+  if (SEL !== key || SUB !== "people") return;
+  const importBox = `<div class="ko" style="border-left-color:var(--accent);background:var(--accent-soft)">
+      <strong>Import your LinkedIn connections</strong>
+      <span class="muted" style="font-size:12px">LinkedIn → Me → Settings &amp; Privacy → Data privacy → <em>Get a copy of your data</em> → Connections.
+      LinkedIn emails a zip; choose the <code>Connections.csv</code> inside. It stays on this computer (gitignored), and nothing is scraped.</span>
+      <div class="row"><input type="file" id="net-file" accept=".csv,text/csv"><span class="muted" id="net-msg"></span></div></div>`;
+  const leads = d.leads.map((l, i) => `<div class="lead">
+      <div class="row" style="margin:0"><strong>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>` : esc(l.name)}</strong>
+        <span class="pill lk-${l.likelihood}" title="score ${l.score}/100">${l.likelihood} · ${l.score}</span>
+        <span class="muted" style="margin-left:auto;font-size:12px">${l.connected_on ? "connected " + esc(l.connected_on) : esc(l.role)}</span></div>
+      <div>${esc(l.position || "")}</div>
+      <ul>${l.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+      <div class="row" style="margin:6px 0"><label class="muted">How well do you know them?
+        <select data-close="${i}">${["", ...d.closeness].map(c => `<option value="${esc(c)}" ${c === l.closeness ? "selected" : ""}>${c || "— not tagged —"}</option>`).join("")}</select></label></div>
+      <textarea rows="3" data-note="${i}">${esc(l.draft)}</textarea>
+      <div class="row" style="margin:4px 0 0"><span class="muted" style="font-size:12px" data-len="${i}"></span>
+        <button class="btn" data-copy="${i}" style="margin-left:auto">Copy note</button></div></div>`).join("");
+  const none = d.total ? `<p class="muted">None of your ${d.total} connections work at ${esc(DET.job.company)} yet. The links below find people you could reach out to.</p>` : "";
+  $("#d-body").innerHTML = `${d.total ? "" : importBox}
+    ${d.leads.length ? `<p class="muted" style="margin-top:0">${d.leads.length} of your connections work at ${esc(DET.job.company)}, ranked by how likely they are to help with a referral (a heuristic; the reasons are listed).</p>` : none}
+    ${leads}
+    <h4 style="margin:16px 0 6px">Find people you don't know yet</h4>
+    <div class="links">${d.links.map(l => `<div style="margin:4px 0"><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a> <span class="muted" style="font-size:12px">${esc(l.why)}</span></div>`).join("")}</div>
+    <p class="muted" style="font-size:12px">These open LinkedIn or Google in your browser; Job Seeker never logs in to or scrapes LinkedIn.</p>
+    ${d.total ? `<details><summary>Update your connections export</summary>${importBox}</details>` : ""}`;
+  const len = i => { const t = document.querySelector(`[data-note="${i}"]`), n = t.value.length;
+    document.querySelector(`[data-len="${i}"]`).textContent = `${n} characters${n > 300 ? " (over LinkedIn's 300 for a connection note)" : ""}`; };
+  d.leads.forEach((l, i) => {
+    len(i);
+    document.querySelector(`[data-note="${i}"]`).addEventListener("input", () => len(i));
+    document.querySelector(`[data-copy="${i}"]`).onclick = () => copy(document.querySelector(`[data-note="${i}"]`).value);
+    document.querySelector(`[data-close="${i}"]`).onchange = async e => {
+      try { await api("/api/people/closeness", {name: l.name, url: l.url, closeness: e.target.value}); toast("Saved"); renderPeople(); }
+      catch (err) { toast(err.message); }
+    };
+  });
+  document.querySelectorAll("#net-file").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    try { const r = await api("/api/network/import", {text: await f.text()}); toast(`Imported ${r.count} connections`); await load(); renderPeople(); }
+    catch (err) { inp.parentElement.querySelector("#net-msg").textContent = err.message; }
+  });
 }
 
 function renderRef() {

@@ -17,7 +17,7 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, request, send_file
 
-from jobseeker import config_edit, discover, knockout, store, util
+from jobseeker import config_edit, discover, knockout, network, store, util
 from jobseeker.answers import load_profile
 from jobseeker.applications import (
     company_slug,
@@ -95,6 +95,9 @@ def create_app(ws: Workspace) -> Flask:
     def overview():
         fresh()
         apps, found = store.applications(ws), store.first_seen(ws)
+        aliases = {c["name"]: c.get("aliases", []) for c in ws.cfg["companies"]}
+        people = network.counts_by_company(network.load_contacts(ws), [
+            {"name": n, "aliases": aliases.get(n, [])} for n in {r["company"] for r in load_matches(ws)}])
         rows = []
         for i, r in enumerate(load_matches(ws), 1):
             a = apps.get(r["key"], {})
@@ -104,7 +107,8 @@ def create_app(ws: Workspace) -> Flask:
                          "mode": r["mode"], "posted": r["posted"], "url": r["url"], "why": r["why"],
                          "track": r["track"], "status": a.get("status", ""), "todo": todo, "questions": nq,
                          "found": found.get(r["key"], ""),
-                         "flags": [vars(f) for f in knockout.loads(r.get("flags", ""))]})
+                         "flags": [vars(f) for f in knockout.loads(r.get("flags", ""))],
+                         "people": people.get(r["company"], 0)})
         in_matches = {r["key"] for r in rows}
         tracked = []
         for a in sorted(apps.values(), key=lambda a: a["updated"] or "", reverse=True):
@@ -147,12 +151,7 @@ def create_app(ws: Workspace) -> Flask:
                                      for q in out.get("questions", []))
         return jsonify(out)
 
-    @app.get("/api/ids")
-    def job_ids():
-        """Requisition / position IDs from Greenhouse (what referrers search for internally)."""
-        job, _ = find_job(request.args.get("key", ""))
-        if not job:
-            return fail("Unknown job", 404)
+    def greenhouse_ids(job):
         ids = {"posting": job["job_id"]}
         if job["source"] == "greenhouse" and job.get("slug"):
             try:
@@ -164,7 +163,64 @@ def create_app(ws: Workspace) -> Flask:
                         ids["position"] = m["value"]
             except Exception as e:
                 ids["error"] = util.describe_error(e)
-        return jsonify(ids)
+        return ids
+
+    @app.get("/api/ids")
+    def job_ids():
+        """Requisition / position IDs from Greenhouse (what referrers search for internally)."""
+        job, _ = find_job(request.args.get("key", ""))
+        if not job:
+            return fail("Unknown job", 404)
+        return jsonify(greenhouse_ids(job))
+
+    # ----------------------------------------------------------------------- people
+    def company_aliases(name):
+        return next((c.get("aliases", []) for c in ws.cfg["companies"] if c["name"] == name), [])
+
+    @app.get("/api/people")
+    def people():
+        """Your connections at the job's company, ranked by referral likelihood, plus search links."""
+        fresh()
+        job, _ = find_job(request.args.get("key", ""))
+        if not job:
+            return fail("Unknown job", 404)
+        try:
+            prof = load_profile(ws)
+        except JobSeekerError:
+            prof = {}
+        me = {**prof.get("me", {}), **prof.get("work", {})}
+        contacts = network.load_contacts(ws)
+        leads = network.rank(contacts, job["company"], job["title"], company_aliases(job["company"]))
+        req = greenhouse_ids(job).get("requisition", "") if leads else ""
+        return jsonify(
+            has_export=(ws.network_dir / network.CONNECTIONS).exists(), total=len(contacts),
+            closeness=[k for k in network.CLOSENESS if k],
+            leads=[{"name": ld.contact.name, "position": ld.contact.position, "url": ld.contact.url,
+                    "connected_on": ld.contact.connected_on, "closeness": ld.contact.closeness,
+                    "note": ld.contact.note, "role": ld.role, "score": ld.score, "likelihood": ld.likelihood,
+                    "reasons": ld.reasons, "draft": network.draft_note(ld, job, me, req)} for ld in leads],
+            links=network.search_links(job["company"], job["title"], me.get("past_employers", [])))
+
+    @app.post("/api/people/closeness")
+    def people_closeness():
+        b = request.get_json(force=True)
+        contact = next((c for c in network.load_contacts(ws)
+                        if (b.get("url") and c.url == b["url"]) or c.name == b.get("name")), None)
+        if not contact:
+            return fail("Unknown contact", 404)
+        try:
+            network.set_closeness(ws, contact, b.get("closeness", ""), b.get("note"))
+        except ValueError as e:
+            return fail(str(e))
+        return jsonify(ok=True)
+
+    @app.post("/api/network/import")
+    def network_import():
+        try:
+            n = network.save_import(ws, request.get_json(force=True).get("text", ""))
+        except ValueError as e:
+            return fail(str(e))
+        return jsonify(ok=True, count=n)
 
     @app.post("/api/prep")
     def prep():

@@ -29,6 +29,7 @@ start = "2 weeks notice"
 years_experience = ""       # total professional years, e.g. "8"; blank = don't check
 degree = ""                 # highest degree: "Bachelor's", "Master's", "PhD"; blank = don't check
 clearance = ""              # active security clearance, e.g. "Secret"; blank = none
+past_employers = []         # e.g. ["Acme", "Globex"]: finds former colleagues at a company (People tab)
 
 [eeo]
 # decline = pick "Decline to self-identify" (or similar) on voluntary EEO questions.

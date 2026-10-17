@@ -107,3 +107,26 @@ def test_knockouts_in_api_and_cli(client, demo, capsys):
     assert "✗ BLOCK" in out and "security clearance" in out
     cli.main(["--home", str(demo.home), "list"])
     assert "✗ likely knock-out" in capsys.readouterr().out
+
+
+def test_people_api_and_cli(client, demo, capsys, monkeypatch):
+    rows = client.get("/api/overview", headers=H).get_json()["matches"]
+    lumen = next(r for r in rows if r["company"] == "Lumen Pay")
+    assert lumen["people"] == 4
+    d = client.get("/api/people", query_string={"key": lumen["key"]}, headers=H).get_json()
+    assert [ld["name"] for ld in d["leads"]][:2] == ["Priya Shah", "Marcus Lee"] and d["has_export"]
+    assert d["leads"][0]["likelihood"] == "High" and "Ex-Initech at Lumen Pay" in [x["label"] for x in d["links"]]
+    r = client.post("/api/people/closeness", json={"name": "Marcus Lee", "closeness": "close"}, headers=W)
+    assert r.status_code == 200
+    d = client.get("/api/people", query_string={"key": lumen["key"]}, headers=H).get_json()
+    marcus = next(ld for ld in d["leads"] if ld["name"] == "Marcus Lee")
+    assert (marcus["score"], marcus["likelihood"], marcus["closeness"]) == (80, "High", "close")
+    bad = client.post("/api/network/import", json={"text": "not,a,linkedin,export"}, headers=W)
+    assert bad.status_code == 400
+    cli.main(["--home", str(demo.home), "network", "companies"])
+    assert "Lumen Pay" in capsys.readouterr().out
+
+
+def test_network_data_is_gitignored():
+    ignored = open(".gitignore").read().split()
+    assert "linkedin/" in ignored and "contacts.toml" in ignored

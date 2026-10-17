@@ -18,6 +18,7 @@ page shows, and:
 - **Prepares the application before you open it**: fetches the real form questions, answers the standard ones from your profile (work authorization, sponsorship, salary, location, EEO preferences…), and flags the few that need you.
 - **Pre-fills the form in your browser** (Greenhouse, Ashby). You review it and click Submit yourself.
 - **Drafts cover letters** grounded only in facts from your resume, and renders them to PDF attached to the form.
+- **Finds who can refer you**: import LinkedIn's export of your connections and each job shows who you know at that company, ranked by how likely they are to help (role, same team, how well you know them), with a short note drafted. Plus search links for the likely hiring manager, the team, recruiters and former colleagues. Nothing is scraped.
 - **Helps with referrals**: requisition IDs your contact can search for internally, and a place to keep the paragraph they paste.
 - Runs **on a schedule** and notifies you only when there's something new.
 
@@ -53,14 +54,18 @@ Then edit `profile.toml` (your details, resume path and answer rules) and `confi
 |---|---|
 | ![Matches grouped by the day they were found](docs/screenshots/by-date.png) | ![Cover letter drafting](docs/screenshots/cover-letter.png) |
 | **Matches**: sort by any column, or group by the run that found them. Every application question is answered or flagged. | **Cover letters**: drafted from the posting and your resume, then edited, copied, or exported to PDF and attached to the form. |
-| ![Knock-out warning](docs/screenshots/knockout.png) | ![Settings](docs/screenshots/settings.png) |
-| **Knock-out warnings**: "✗ knock-out" when the posting states a requirement you don't meet, "! check" for softer ones, with the quoted evidence. | **Settings**: add a company by name or link, toggle it, and tune filters and scoring. Every change is validated before saving. |
+| ![Knock-out warning](docs/screenshots/knockout.png) | ![People at the company](docs/screenshots/people.png) |
+| **Knock-out warnings**: "✗ knock-out" when the posting states a requirement you don't meet, "! check" for softer ones, with the quoted evidence. | **People**: your connections at the company ranked by referral likelihood, with reasons and a ready note; 👥 counts in the list. |
+| ![Settings](docs/screenshots/settings.png) | |
+| **Settings**: add a company by name or link, toggle it, and tune filters and scoring. Every change is validated before saving. | |
 
 Or from the terminal:
 
 ```
 jobseeker list                       # numbered matches with status (✗ = likely knock-out)
 jobseeker check 3                    # knock-out warnings for #3, with the quoted evidence
+jobseeker network import ~/Downloads/Connections.csv   # your LinkedIn connections export
+jobseeker people 3                   # who you know there, ranked by referral likelihood + search links
 jobseeker prep 3                     # fetch #3's form, auto-answer it -> applications/<job>/form.toml
 jobseeker fill 3                     # open it pre-filled in Chrome; you review and Submit
 jobseeker cover generate 3           # draft cover_letter.md (uses the local `claude` CLI)
@@ -89,6 +94,7 @@ flowchart LR
 - **Matching** (`matching.py`) infers work mode from structured fields when the board has them, and from location and description text otherwise ("3 days a week in the office" → hybrid, but "hybrid cloud" isn't). Then it applies your rule: remote must be in-country; hybrid/onsite must list an office in your metro.
 - **Scoring** is transparent keyword matching against *tracks* you define: title hits count 3×, description hits 1× (capped), with a bonus for your stack and a penalty for stacks you avoid. Every score comes with its reasons.
 - **Knock-outs** (`knockout.py`) are sentence-level text checks against your profile: explicit requirements ("requires an active Secret clearance", "Master's degree required", "will not sponsor") block; softer ones (years, pay range, "PhD or related field") warn. Alternatives such as "or equivalent experience" and "preferred" are recognized, so they don't trigger. They're heuristics with evidence, not verdicts.
+- **People** (`network.py`) joins LinkedIn's own export of your connections (`Connections.csv`, from Settings & Privacy → Data privacy → Get a copy of your data) to each job's company, after normalizing names like "Acme, Inc.". It scores each person on role (engineer > recruiter / manager > others), whether their title names this job's team, and how well you know them (you tag it; stored in `contacts.toml`). For people you don't know yet, it builds LinkedIn and Google search links that you open yourself, because LinkedIn forbids automated access.
 - **Answers** come from ordered regex rules in `profile.toml` that map question labels to preference lists. Each preference is matched exact → prefix → substring against the form's real options.
 - **Everything is files** in one workspace folder (`config.toml`, `profile.toml`, `applications/<job>/form.toml`, `digests/`), so the CLI, the web UI and your editor all see the same state.
 

@@ -81,6 +81,16 @@ class Workspace:
         return self.home / "referrals"
 
     @property
+    def network_dir(self) -> Path:
+        """Your LinkedIn export (Connections.csv): other people's data, kept local and gitignored."""
+        return self.home / "linkedin"
+
+    @property
+    def contacts_path(self) -> Path:
+        """How well you know each contact, plus people you add by hand."""
+        return self.home / "contacts.toml"
+
+    @property
     def matches_csv(self) -> Path:
         return self.digests_dir / "matches_latest.csv"
 

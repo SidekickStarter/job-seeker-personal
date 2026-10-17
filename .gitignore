@@ -6,6 +6,8 @@ digests/
 applications/
 logs/
 referrals/
+linkedin/
+contacts.toml
 demo-workspace/
 
 # Python / tooling

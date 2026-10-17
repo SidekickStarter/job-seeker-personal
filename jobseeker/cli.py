@@ -10,6 +10,8 @@
 
   jobseeker list [--top 30]           numbered matches from the latest run, with status
   jobseeker check <#|url|folder>      knock-out warnings: requirements you'd likely be rejected on
+  jobseeker people <#|url|folder>     who you know there, ranked by referral likelihood, + search links
+  jobseeker network import <file>     load LinkedIn's Connections.csv export; `network companies` = counts
   jobseeker prep <#|url|folder>       fetch the form and auto-answer it from profile.toml
   jobseeker fill <#|url|folder>       pre-fill it in a browser; you review and click Submit
   jobseeker cover generate <job>      draft a cover letter (local `claude` CLI); `cover pdf <job>` renders it
@@ -47,7 +49,8 @@ def cmd_init(args):
         print(f"created  {target}")
     gi = home / ".gitignore"
     if not gi.exists():
-        gi.write_text("# Job Seeker personal data\nprofile.toml\n*.db\ndigests/\napplications/\nlogs/\nreferrals/\n")
+        gi.write_text("# Job Seeker personal data\nprofile.toml\n*.db\ndigests/\napplications/\nlogs/\nreferrals/\n"
+                    "linkedin/\ncontacts.toml\n")
     print("\nNext: edit profile.toml (your details + resume path) and config.toml (companies, filters),\n"
           "then `jobseeker run` or `jobseeker web`.")
 
@@ -135,6 +138,55 @@ def cmd_check(ws, args):
     print_flags(knockouts(ws, job, folder, load_profile(ws)))
     if not folder:
         print("(posting only; `prep` it to also check the application questions)")
+
+
+def cmd_people(ws, args):
+    from jobseeker import network
+    from jobseeker.answers import load_profile
+    from jobseeker.applications import resolve
+    job, _ = resolve(ws, args.job)
+    prof = load_profile(ws)
+    me = {**prof.get("me", {}), **prof.get("work", {})}
+    aliases = next((c.get("aliases", []) for c in ws.cfg["companies"] if c["name"] == job["company"]), [])
+    contacts = network.load_contacts(ws)
+    leads = network.rank(contacts, job["company"], job["title"], aliases)
+    print(f"{job['company']} — {job['title'].strip()}")
+    if not contacts:
+        print("  No connections loaded. Export them from LinkedIn (Settings & Privacy > Data privacy >\n"
+              "  Get a copy of your data > Connections), then: jobseeker network import ~/Downloads/Connections.csv")
+    elif not leads:
+        print(f"  None of your {len(contacts)} connections are at {job['company']}.")
+    for ld in leads:
+        print(f"\n  {ld.likelihood:<6} {ld.score:>3}  {ld.contact.name} — {ld.contact.position}")
+        for r in ld.reasons:
+            print(f"              · {r}")
+        if ld.contact.url:
+            print(f"              {ld.contact.url}")
+        print(f"              note: {network.draft_note(ld, job, me)}")
+    print("\nFind people you don't know yet (opens LinkedIn/Google; you browse):")
+    for link in network.search_links(job["company"], job["title"], me.get("past_employers", [])):
+        print(f"  {link['label']:<28} {link['url']}")
+
+
+def cmd_network(ws, args):
+    from jobseeker import network
+    if args.action == "import":
+        if not args.file:
+            raise JobSeekerError("Usage: jobseeker network import <path to Connections.csv>")
+        try:
+            n = network.save_import(ws, Path(args.file).expanduser().read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError) as e:
+            raise JobSeekerError(str(e)) from None
+        print(f"Imported {n} connections into {ws.rel(ws.network_dir / network.CONNECTIONS)} (private, gitignored).")
+    from jobseeker.applications import load_matches
+    companies = {c["name"]: c for c in ws.cfg["companies"]}
+    for r in load_matches(ws):                       # plus companies of current matches
+        companies.setdefault(r["company"], {"name": r["company"]})
+    counts = network.counts_by_company(network.load_contacts(ws), list(companies.values()))
+    if not counts:
+        print("No connections at your companies yet.")
+    for name, n in sorted(counts.items(), key=lambda x: -x[1]):
+        print(f"  {n:>3}  {name}")
 
 
 def cmd_prep(ws, args):
@@ -263,6 +315,11 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("--top", type=int, default=30)
     s = sub.add_parser("check", help="knock-out warnings for a job (posting + application questions)")
     s.add_argument("job", help="number from `list`, a posting URL, or an application folder")
+    s = sub.add_parser("people", help="your connections at a job's company, ranked by referral likelihood")
+    s.add_argument("job")
+    s = sub.add_parser("network", help="import your LinkedIn connections export, or count them per company")
+    s.add_argument("action", choices=("import", "companies"))
+    s.add_argument("file", nargs="?", help="Connections.csv (for import)")
     s = sub.add_parser("prep", help="fetch a job's form and auto-answer it")
     s.add_argument("job", help="number from `list`, a posting URL, or an application folder")
     s.add_argument("--force", action="store_true", help="re-fetch and overwrite form.toml")
@@ -294,7 +351,8 @@ def parser() -> argparse.ArgumentParser:
     return p
 
 
-COMMANDS = {"run": cmd_run, "verify": cmd_verify, "add": cmd_add, "list": cmd_list, "check": cmd_check, "prep": cmd_prep,
+COMMANDS = {"run": cmd_run, "verify": cmd_verify, "add": cmd_add, "list": cmd_list, "check": cmd_check, "people": cmd_people,
+            "network": cmd_network, "prep": cmd_prep,
             "fill": cmd_fill, "cover": cmd_cover, "mark": cmd_mark, "status": cmd_status, "daily": cmd_daily,
             "web": cmd_web, "schedule": cmd_schedule}
 

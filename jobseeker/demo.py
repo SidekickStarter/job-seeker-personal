@@ -106,6 +106,31 @@ Alex Rivera is a senior backend engineer with 10 years of experience building pa
 systems. ... (Sample note: write yours here, or ask an assistant to draft one from the posting.)
 """
 
+CONNECTIONS = """Notes:
+"When exporting your connection data, you may notice that some of the email addresses are missing."
+
+First Name,Last Name,URL,Email Address,Company,Position,Connected On
+Priya,Shah,https://example.com/in/priya-shah,,Lumen Pay,"Senior Software Engineer, Ledger Platform",14 Mar 2022
+Marcus,Lee,https://example.com/in/marcus-lee,,"Lumen Pay, Inc.","Engineering Manager, Ledger & Settlement",02 Sep 2024
+Dana,Kim,https://example.com/in/dana-kim,,Lumen Pay,Technical Recruiter,19 Jan 2026
+Tom,Alvarez,https://example.com/in/tom-alvarez,,Lumen Pay,Product Designer,30 Jun 2019
+Wei,Zhang,https://example.com/in/wei-zhang,,Cobalt Data,Staff Engineer,11 Nov 2021
+Sara,Okafor,https://example.com/in/sara-okafor,,Northwind Freight,VP of Engineering,05 May 2023
+Leo,Brandt,https://example.com/in/leo-brandt,,Initech,Software Engineer,08 Aug 2018
+"""
+
+CONTACT_TAGS = """# How well you know people (used to rank referral likelihood). Private: gitignored.
+[[contact]]
+name = "Priya Shah"
+url = "https://example.com/in/priya-shah"
+closeness = "worked together"
+note = "Globex 2019-2021, same team"
+
+[[contact]]
+name = "Wei Zhang"
+closeness = "know a bit"
+"""
+
 RESUME = """Alex Rivera — Senior Software Engineer (sample resume for the Job Seeker demo)
 Experience: 10 years building payment ledgers, event-driven services (Java, Kafka, AWS) and data pipelines.
 """
@@ -125,6 +150,9 @@ def build_demo(target: Path | None = None) -> Workspace:
         profile = profile.replace(a, b, 1)
     profile = profile.replace('years_experience = ""', 'years_experience = "10"', 1)
     profile = profile.replace('degree = ""', 'degree = "Bachelor\'s"', 1)
+    profile = profile.replace('current_company = ""', 'current_company = "Globex"', 1)
+    profile = profile.replace('current_title = ""', 'current_title = "Senior Software Engineer"', 1)
+    profile = profile.replace('past_employers = []', 'past_employers = ["Initech"]', 1)
     (home / "profile.toml").write_text(profile)
     ws = Workspace.load(home)
     prof = load_profile(ws)
@@ -167,6 +195,9 @@ def build_demo(target: Path | None = None) -> Workspace:
         j = next(x for x in jobs if x.job_id == jid)
         set_status(ws, {"key": j.key, "company": j.company, "title": j.title, "url": j.url}, None, status)
 
+    ws.network_dir.mkdir(exist_ok=True)
+    (ws.network_dir / "Connections.csv").write_text(CONNECTIONS)
+    ws.contacts_path.write_text(CONTACT_TAGS)
     ws.notes_dir.mkdir(exist_ok=True)
     (ws.notes_dir / "intro.md").write_text("# Referral intro\n\nHi [Name], I'm a senior backend engineer ... "
                                            "(Sample note: keep reusable outreach templates here.)\n")

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-radar"
+version = "0.1.0"
+description = "Watch company job boards directly, score postings against your background, and prepare applications for review. Never auto-submits."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "Kong Zheng" }]
+keywords = ["jobs", "job-search", "greenhouse", "lever", "ashby", "workday", "ats", "playwright"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Environment :: Web Environment",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business",
+]
+# The core (fetch, filter, score, digest, prep) is standard library only.
+dependencies = []
+
+[project.optional-dependencies]
+web = ["flask>=3", "tomlkit>=0.11"]          # `jobradar web`, Settings editing, `jobradar add`
+fill = ["playwright>=1.40"]                   # `jobradar fill`, cover-letter PDFs
+cover = ["pypdf>=4"]                          # read your resume PDF when drafting cover letters
+all = ["job-radar[web,fill,cover]"]
+dev = ["job-radar[web,cover]", "pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+jobradar = "jobradar.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/SidekickStarter/job-radar"
+Issues = "https://github.com/SidekickStarter/job-radar/issues"
+
+[tool.setuptools.packages.find]
+include = ["jobradar*"]
+
+[tool.setuptools.package-data]
+jobradar = ["templates/*.toml", "web/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "E731", "B008", "B905"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["jobradar"]

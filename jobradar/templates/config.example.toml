@@ -1,0 +1,123 @@
+# Job Radar config: which companies to watch, which jobs to keep, and how to score them.
+# `jobradar init` copies this to config.toml. Edit it here or in the web UI (Settings tab).
+# Regexes are TOML literal strings ('...'), so \b (word boundary) needs no escaping.
+
+[settings]
+min_score = 6                     # matches scoring below this are dropped
+max_workers = 8                   # boards fetched in parallel
+db_path = "job_radar.db"
+out_dir = "digests"
+apps_dir = "applications"         # one folder per prepared application
+include_managers = false          # true to include Engineering Manager / Director titles
+allow_unknown_location = false
+company_domain_bonus = 3          # a company's own track gets this bonus
+auto_prep_min_score = 10          # `jobradar daily` preps new matches at/above this score...
+auto_prep_max = 10                # ...at most this many per run
+
+[filters]
+title_must_match = 'engineer|developer|architect|\bsde\b|\bswe\b'
+seniority = '\bsenior\b|\bsr\.?\b|\bstaff\b|\bprincipal\b|\blead\b|\bfounding\b|\bIII\b|\bIV\b|\bL[5-7]\b'
+allow_unlabeled_seniority = true  # startups often omit level; these get a -2 score penalty
+title_exclude = [
+  '\bintern\b', 'internship', 'new grad', 'graduate', 'junior', '\bjr\b', 'apprentice',
+  'front[- ]?end', '\bios\b', 'android', 'mobile', 'embedded', 'firmware', 'hardware',
+  '\bqa\b', 'test engineer', 'sales engineer', 'solutions? engineer', 'support engineer',
+  'field engineer', 'customer engineer', 'solutions? architect', 'security engineer',
+  'network engineer', 'site reliability', '\bsre\b', 'mechanical', 'electrical',
+]
+
+[location]
+# Remote roles pass anywhere in your country; hybrid/onsite roles must list a location in `metro`.
+# Keep only some work modes per run with `jobradar run --mode remote,hybrid`.
+modes = ["remote", "hybrid", "onsite"]
+
+# Your commute area for hybrid/onsite roles (this example: New York City). Matched against each
+# listed office separately, so "San Francisco; New York, NY" passes.
+metro = ['new york', '\bnyc\b', '\bny\b', 'manhattan', 'brooklyn', 'queens', 'bronx',
+         'jersey city', 'hoboken', 'newark', 'white plains', 'stamford']
+# Places that match `metro` but are too far (e.g. upstate NY matches '\bny\b').
+metro_exclude = ['albany', 'buffalo', 'rochester', 'syracuse', 'ithaca']
+us_markers = ['\bus\b', '\busa\b', 'united states', 'north america', '\bu\.s\.']
+non_us_markers = ['canada', '\buk\b', 'united kingdom', 'india', 'emea', 'europe', 'apac',
+                  'brazil', 'mexico', 'latam', 'germany', 'poland', 'ireland', 'spain',
+                  'singapore', 'australia', 'israel', 'netherlands', 'london', 'paris', 'berlin',
+                  'dublin', 'amsterdam', 'toronto', 'vancouver', 'tokyo', 'bangalore', 'bengaluru']
+
+# ---------------------------------------------------------------- scoring tracks
+# A track is a kind of work you're good at. Each posting is scored against every track:
+# 3 points per keyword in the title, 1 per keyword in the description (max 8), times `weight`.
+# Keywords match as word prefixes ('forecast' hits 'forecasting'); a trailing $ = whole word only.
+# Replace these examples with your own background.
+
+[tracks.data_platform]
+label = "Data platform / streaming"
+weight = 1.2
+keywords = ["data platform", "data pipeline", "ingestion", "streaming", "kafka", "flink", "spark",
+            "airflow", "lakehouse", "iceberg", "warehouse", "etl$", "batch", "petabyte"]
+
+[tracks.backend]
+label = "Backend / distributed systems"
+weight = 1.0
+keywords = ["distributed system", "microservice", "api$", "backend", "scalab", "high availability",
+            "latency", "throughput", "event-driven", "service-oriented"]
+
+[tracks.payments]
+label = "Payments / fintech"
+weight = 1.0
+keywords = ["payment", "ledger", "fraud", "risk", "lending", "credit", "billing", "transaction",
+            "compliance", "banking"]
+
+[stack]
+bonus_keywords = ["java$", "python", "aws", "kafka", "distributed system", "microservice"]
+penalty_keywords = ["golang", "rust$", "scala$"]   # stacks you'd rather avoid
+
+# ---------------------------------------------------------------- companies
+# ats: greenhouse | lever | ashby | workday. `jobradar add "<name or careers URL>"` finds the
+# board for you; `jobradar verify` checks them all. `track` is optional ("none" = no bonus).
+
+[[companies]]
+name = "Stripe"
+track = "payments"
+ats = "greenhouse"
+slug = "stripe"
+
+[[companies]]
+name = "Datadog"
+track = "backend"
+ats = "greenhouse"
+slug = "datadog"
+
+[[companies]]
+name = "Databricks"
+track = "data_platform"
+ats = "greenhouse"
+slug = "databricks"
+
+[[companies]]
+name = "Reddit"
+track = "backend"
+ats = "greenhouse"
+slug = "reddit"
+
+[[companies]]
+name = "Ramp"
+track = "payments"
+ats = "ashby"
+slug = "ramp"
+
+[[companies]]
+name = "Plaid"
+track = "payments"
+ats = "ashby"
+slug = "plaid"
+
+# Workday boards are large: list search terms and cap the results.
+[[companies]]
+name = "Capital One"
+track = "payments"
+ats = "workday"
+host = "capitalone.wd12.myworkdayjobs.com"
+tenant = "capitalone"
+site = "Capital_One"
+search = ["senior software engineer", "principal software engineer"]
+max_results = 100

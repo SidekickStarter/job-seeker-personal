@@ -1,0 +1,14 @@
+{"jobs": [
+  {"id": 101, "title": "Senior Software Engineer, Payments Ledger", "location": {"name": "Remote - US"},
+   "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/101", "updated_at": "2026-01-05T10:00:00-05:00",
+   "content": "&lt;p&gt;Build our payment ledger on Kafka and Java. This role is fully remote.&lt;/p&gt;"},
+  {"id": 102, "title": "Staff Data Engineer, Streaming", "location": {"name": "New York, NY"},
+   "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/102", "updated_at": "2026-01-06T10:00:00-05:00",
+   "content": "&lt;p&gt;Hybrid: three days a week in our NYC office. Kafka, Spark and Airflow pipelines on our data platform.&lt;/p&gt;"},
+  {"id": 103, "title": "Senior Software Engineer", "location": {"name": "San Francisco, CA"},
+   "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/103", "updated_at": "2026-01-06T10:00:00-05:00",
+   "content": "&lt;p&gt;Hybrid role, 3 days per week in the office.&lt;/p&gt;"},
+  {"id": 104, "title": "Software Engineering Intern", "location": {"name": "Remote - US"},
+   "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/104", "updated_at": "2026-01-06T10:00:00-05:00",
+   "content": "&lt;p&gt;Summer internship.&lt;/p&gt;"}
+]}

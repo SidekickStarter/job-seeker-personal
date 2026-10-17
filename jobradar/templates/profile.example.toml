@@ -1,0 +1,130 @@
+# Your details and answer rules. `jobradar init` copies this to profile.toml; keep that file private.
+# Every value under [me] and [work] can be referenced in rule answers as {name}.
+
+[me]
+first_name = "First"
+last_name = "Last"
+preferred_name = "First"
+email = "you@example.com"
+phone = "(555) 555-5555"
+linkedin = "https://www.linkedin.com/in/you/"
+github = ""                 # blank = leave the field empty
+website = ""
+city = ""                   # e.g. "Jersey City"
+state = ""                  # e.g. "New Jersey" (some forms ask which state you live in)
+country = "United States"
+location_search = []   # what to type into location autocompletes, in order
+resume = "/path/to/Resume.pdf"   # absolute, or relative to this folder
+
+[work]
+authorized = "Yes"
+sponsorship = "No"
+citizenship = "U.S. Citizen"
+current_company = ""
+current_title = ""
+salary_text = "$180,000 - $250,000"
+salary_min = "180000"
+start = "2 weeks notice"
+
+[eeo]
+# decline = pick "Decline to self-identify" (or similar) on voluntary EEO questions.
+# blank = leave them for you to answer in the browser.
+policy = "decline"
+
+# ---------------------------------------------------------------- answer rules
+# First rule whose `match` regex hits the question label wins (case-insensitive).
+# For dropdowns/radios, `answer` is a preference list: the first entry that matches
+# an option is chosen. For text fields, the first entry is used.
+# Questions no rule answers are marked TODO; answer them in the web UI or form.toml.
+
+[[rules]]
+match = '(?:[1-3]|one|two|three)\s*(?:\+\s*)?days?.{0,40}(?:office|on[- ]?site|in[- ]person)|hybrid'
+answer = ["Yes"]
+
+[[rules]]
+match = '(?:work|entitled|authori[sz]ed).{0,30}\b(?:canada|united kingdom|uk|ireland|europe|eu|india|mexico)\b'
+answer = ["No"]
+
+[[rules]]
+match = 'sms|whatsapp|text messages?'
+answer = ["No"]
+
+[[rules]]
+match = 'sponsor|visa|immigration|assistance with (?:work|employment) authori[sz]ation'
+answer = ["{sponsorship}"]
+
+[[rules]]
+match = 'authori[sz]ed|legally (?:eligible|able|permitted|entitled)|right to work|eligib\w* to work'
+answer = ["{authorized}"]
+
+[[rules]]
+match = 'citizen'
+answer = ["{citizenship}", "US Citizen", "Citizen", "Yes"]
+
+[[rules]]
+match = '(?:current|most recent|present) (?:\(?or most recent\)? )?(?:company|employer)|company name'
+answer = ["{current_company}"]
+
+[[rules]]
+match = '(?:current|most recent) (?:\(?or most recent\)? )?(?:job )?title'
+answer = ["{current_title}"]
+
+[[rules]]
+match = 'linkedin'
+answer = ["{linkedin}"]
+
+[[rules]]
+match = 'github'
+answer = ["{github}"]
+
+[[rules]]
+match = 'website|portfolio|personal (?:site|url)'
+answer = ["{website}"]
+
+[[rules]]
+match = 'salary|compensation|pay (?:expectation|range|requirement)'
+answer = ["{salary_text}"]
+
+[[rules]]
+match = 'start date|notice period|when (?:can|could) you (?:start|join)|available to start|earliest'
+answer = ["{start}"]
+
+[[rules]]
+match = 'hear about|how did you (?:find|learn)|referral source|^source'
+answer = ["LinkedIn (Job Posting)", "LinkedIn", "Company Website", "Careers Page", "Job Board", "Other"]
+
+[[rules]]
+match = '18 years|age of 18'
+answer = ["Yes"]
+
+[[rules]]
+match = 'certify|attest|acknowledg|i understand|i agree|privacy (?:notice|policy)|accurate and complete'
+answer = ["Yes", "I agree", "Agree", "I acknowledge", "Acknowledge", "I understand", "I certify", "Confirm"]
+
+[[rules]]
+match = 'languages'
+answer = ["English"]
+
+[[rules]]
+match = 'which (?:cities|city|office|location)|cities are you|preferred (?:office|location)|available to work'
+answer = ["{city}", "Remote"]           # e.g. ["New York", "NYC", "Remote"]
+
+[[rules]]
+match = 'currently (?:work|employed)|previously,? (?:worked|been employed)|former employee|ever (?:worked|been employed)|have you (?:ever )?worked (?:at|for)'
+answer = ["No", "I have not", "Never", "None"]
+
+[[rules]]
+match = 'government official|politically exposed|related to (?:any|an) (?:employee|current)|relative'
+answer = ["No"]
+
+[[rules]]
+match = '^country$|country of residence|which country'
+answer = ["{country}", "United States of America", "USA", "US"]
+
+[[rules]]
+match = 'which state|state of residence|resident of|state do you (?:currently )?(?:reside|live)'
+answer = ["{state}"]
+
+[[rules]]
+match = '^city$|^location$|current (?:city|location)|where are you (?:located|based)'
+answer = ["{city}, {state}"]

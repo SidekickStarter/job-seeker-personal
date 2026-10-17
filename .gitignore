@@ -1,0 +1,21 @@
+# Your workspace (personal; see config.example.toml / profile.example.toml in jobradar/templates)
+config.toml
+profile.toml
+*.db
+digests/
+applications/
+logs/
+referrals/
+demo-workspace/
+
+# Python / tooling
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.DS_Store

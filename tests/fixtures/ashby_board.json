@@ -1,0 +1,12 @@
+{"jobs": [
+  {"id": "aaaaaaaa-0000-0000-0000-000000000001", "title": "Senior Backend Engineer", "location": "New York",
+   "secondaryLocations": [{"location": "Remote"}], "isListed": true, "isRemote": true, "workplaceType": "Hybrid",
+   "jobUrl": "https://jobs.ashbyhq.com/beta/aaaaaaaa-0000-0000-0000-000000000001", "publishedAt": "2026-01-02T00:00:00Z",
+   "descriptionPlain": "Distributed systems in Python on AWS."},
+  {"id": "aaaaaaaa-0000-0000-0000-000000000002", "title": "Staff Engineer, Streaming", "location": "Remote",
+   "isListed": true, "isRemote": true, "workplaceType": "Remote",
+   "jobUrl": "https://jobs.ashbyhq.com/beta/aaaaaaaa-0000-0000-0000-000000000002", "publishedAt": "2026-01-03T00:00:00Z",
+   "descriptionPlain": "Kafka and Flink streaming platform."},
+  {"id": "aaaaaaaa-0000-0000-0000-000000000003", "title": "Hidden Role", "location": "Remote", "isListed": false,
+   "jobUrl": "https://jobs.ashbyhq.com/beta/x", "descriptionPlain": ""}
+]}

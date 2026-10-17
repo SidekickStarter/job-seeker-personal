@@ -21,7 +21,7 @@ def client(demo):
 
 def test_overview_and_detail(client):
     d = client.get("/api/overview", headers=H).get_json()
-    assert len(d["matches"]) == 12 and d["matches"][0]["score"] == 14.6
+    assert len(d["matches"]) == 13 and d["matches"][0]["score"] == 14.6
     assert {a["status"] for a in d["applications"]} == {"prepared", "applied", "interviewing"}
     top = d["matches"][0]
     assert top["todo"] == 1 and top["found"]
@@ -87,9 +87,23 @@ def test_cli_init_and_list(tmp_path, demo, capsys):
     assert (tmp_path / "new" / "config.toml").exists() and (tmp_path / "new" / "profile.toml").exists()
     cli.main(["--home", str(demo.home), "list", "--top", "3"])
     out = capsys.readouterr().out
-    assert "Lumen Pay" in out and "... 9 more" in out
+    assert "Lumen Pay" in out and "... 10 more" in out
 
 
 def test_cli_friendly_error_without_config(tmp_path):
     with pytest.raises(SystemExit, match="No config.toml"):
         cli.main(["--home", str(tmp_path), "list"])
+
+
+def test_knockouts_in_api_and_cli(client, demo, capsys):
+    rows = client.get("/api/overview", headers=H).get_json()["matches"]
+    fed = next(r for r in rows if "Federal" in r["title"])
+    assert fed["flags"][0]["level"] == "block" and fed["flags"][0]["kind"] == "clearance"
+    detail = client.get("/api/job", query_string={"key": fed["key"]}, headers=H).get_json()
+    assert detail["flags"][0]["evidence"].startswith("This role requires an active Secret clearance")
+    n = next(i for i, r in enumerate(rows, 1) if r["key"] == fed["key"])
+    cli.main(["--home", str(demo.home), "check", str(n)])
+    out = capsys.readouterr().out
+    assert "✗ BLOCK" in out and "security clearance" in out
+    cli.main(["--home", str(demo.home), "list"])
+    assert "✗ likely knock-out" in capsys.readouterr().out

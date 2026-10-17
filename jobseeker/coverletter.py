@@ -17,7 +17,7 @@ import tempfile
 from pathlib import Path
 
 from jobseeker.answers import load_profile
-from jobseeker.applications import load_form, save_form
+from jobseeker.applications import load_form, posting_text, save_form
 from jobseeker.util import safe
 from jobseeker.workspace import JobSeekerError, Workspace
 
@@ -39,9 +39,7 @@ def resume_text(ws: Workspace, prof: dict) -> str:
 
 
 def posting(folder):
-    text = (folder / "job.md").read_text()
-    m = re.search(r"## Description\s*\n(.*)", text, re.S)
-    return (m.group(1) if m else text).strip()[:15000]
+    return posting_text(folder)[:15000]
 
 
 def build_prompt(job, description, resume, name, notes, length):

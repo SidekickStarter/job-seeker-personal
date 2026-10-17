@@ -23,6 +23,7 @@ jobseeker/
   workspace.py      where config and data live (Workspace, JobSeekerError)
   sources/          one module per job board (see below)
   matching.py       title / location / work-mode filters and scoring
+  knockout.py       knock-out warnings: requirements in a posting or form you don't meet
   radar.py          a run: fetch, filter, score, record, write digest
   applications.py   prep: resolve a job, fetch its form, auto-answer, form.toml I/O
   answers.py        profile.toml and the answer rules

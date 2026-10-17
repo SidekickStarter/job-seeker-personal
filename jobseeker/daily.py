@@ -11,7 +11,7 @@ import platform
 import shutil
 import subprocess
 
-from jobseeker import radar
+from jobseeker import knockout, radar
 from jobseeker.answers import load_profile
 from jobseeker.applications import find_folder, job_from_row, load_matches, prep_job
 from jobseeker.workspace import Workspace
@@ -46,8 +46,15 @@ def daily(ws: Workspace, notify_user: bool = True) -> str:
     strong = [r for r in new if float(r["score"]) >= cutoff]
 
     prof = load_profile(ws) if strong else None
-    ready, todo, manual, failed = [], [], [], []
-    for r in strong[:cap]:
+    ready, todo, manual, failed, knocked = [], [], [], [], []
+    for r in strong:
+        if len(ready) + len(todo) + len(manual) + len(failed) >= cap:
+            break
+        flags = knockout.loads(r.get("flags", ""))
+        if knockout.worst(flags) == "block":      # don't spend effort on a likely auto-reject
+            knocked.append(r)
+            print(f"  skipped {r['company']} — {r['title']}: {flags[0].message}")
+            continue
         job = job_from_row(ws, r)
         if find_folder(ws, job):
             continue
@@ -69,6 +76,8 @@ def daily(ws: Workspace, notify_user: bool = True) -> str:
         parts.append(f"{len(manual)} apply on site")
     if failed:
         parts.append(f"{len(failed)} prep failed")
+    if knocked:
+        parts.append(f"{len(knocked)} skipped (knock-out)")
     summary = ", ".join(parts)
     print(f"Summary: {summary}")
     if new and notify_user:

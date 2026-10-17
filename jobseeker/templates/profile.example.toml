@@ -25,6 +25,10 @@ current_title = ""
 salary_text = "$180,000 - $250,000"
 salary_min = "180000"
 start = "2 weeks notice"
+# Knock-out checks (jobseeker check / the UI's warnings) compare postings against these:
+years_experience = ""       # total professional years, e.g. "8"; blank = don't check
+degree = ""                 # highest degree: "Bachelor's", "Master's", "PhD"; blank = don't check
+clearance = ""              # active security clearance, e.g. "Secret"; blank = none
 
 [eeo]
 # decline = pick "Decline to self-identify" (or similar) on voluntary EEO questions.

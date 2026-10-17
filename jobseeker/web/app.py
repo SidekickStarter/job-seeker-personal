@@ -17,9 +17,18 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, request, send_file
 
-from jobseeker import config_edit, discover, store, util
+from jobseeker import config_edit, discover, knockout, store, util
 from jobseeker.answers import load_profile
-from jobseeker.applications import company_slug, find_folder, job_from_row, load_form, load_matches, prep_job, save_form
+from jobseeker.applications import (
+    company_slug,
+    find_folder,
+    job_from_row,
+    knockouts,
+    load_form,
+    load_matches,
+    prep_job,
+    save_form,
+)
 from jobseeker.sources import SOURCES
 from jobseeker.workspace import JobSeekerError, Workspace
 
@@ -94,7 +103,8 @@ def create_app(ws: Workspace) -> Flask:
                          "company": r["company"], "title": r["title"].strip(), "location": r["location"],
                          "mode": r["mode"], "posted": r["posted"], "url": r["url"], "why": r["why"],
                          "track": r["track"], "status": a.get("status", ""), "todo": todo, "questions": nq,
-                         "found": found.get(r["key"], "")})
+                         "found": found.get(r["key"], ""),
+                         "flags": [vars(f) for f in knockout.loads(r.get("flags", ""))]})
         in_matches = {r["key"] for r in rows}
         tracked = []
         for a in sorted(apps.values(), key=lambda a: a["updated"] or "", reverse=True):
@@ -113,7 +123,11 @@ def create_app(ws: Workspace) -> Flask:
         if not job:
             return fail("Unknown job", 404)
         src = SOURCES.get(job["source"])
-        out = {"job": job, "folder": ws.rel(folder) if folder else None,
+        try:
+            flags = knockouts(ws, job, folder, load_profile(ws))
+        except JobSeekerError:          # no profile.toml yet
+            flags = []
+        out = {"job": job, "folder": ws.rel(folder) if folder else None, "flags": [vars(f) for f in flags],
                "status": store.applications(ws).get(job["key"], {}).get("status", ""),
                "fillable": bool(src and src.fill)}
         if folder:

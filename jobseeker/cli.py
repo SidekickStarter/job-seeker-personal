@@ -9,6 +9,7 @@
   jobseeker verify                    check every configured board
 
   jobseeker list [--top 30]           numbered matches from the latest run, with status
+  jobseeker check <#|url|folder>      knock-out warnings: requirements you'd likely be rejected on
   jobseeker prep <#|url|folder>       fetch the form and auto-answer it from profile.toml
   jobseeker fill <#|url|folder>       pre-fill it in a browser; you review and click Submit
   jobseeker cover generate <job>      draft a cover letter (local `claude` CLI); `cover pdf <job>` renders it
@@ -102,14 +103,38 @@ def cmd_list(ws, args):
     rows = load_matches(ws)
     if not rows:
         raise JobSeekerError("No matches yet. Run `jobseeker run` first.")
+    from jobseeker import knockout
     status = {k: a["status"] for k, a in store.applications(ws).items()}
-    print(f"{'#':>3}  {'score':>5}  {'status':<12} {'company':<12} {'mode':<7} title")
+    marks = {"block": "✗", "warn": "!", "": " "}
+    print(f"{'#':>3}  {'score':>5}  {'status':<12} {'company':<12} {'mode':<7}   title")
     for i, r in enumerate(rows[:args.top], 1):
         mode = "office" if r.get("mode", "").startswith("in office") else r.get("mode", "").split(" ")[0]
+        mark = marks[knockout.worst(knockout.loads(r.get("flags", "")))]
         print(f"{i:>3}  {float(r['score']):5.1f}  {status.get(r['key'], ''):<12} {r['company'][:12]:<12} "
-              f"{mode:<7} {r['title'][:70]}")
+              f"{mode:<7} {mark} {r['title'][:70]}")
     if len(rows) > args.top:
         print(f"... {len(rows) - args.top} more (use --top)")
+    if any(knockout.loads(r.get("flags", "")) for r in rows[:args.top]):
+        print("✗ likely knock-out   ! check before applying   (details: jobseeker check <#>)")
+
+
+def print_flags(flags) -> None:
+    if not flags:
+        print("No knock-out warnings.")
+    for f in flags:
+        print(f"  {'✗ BLOCK' if f.level == 'block' else '! WARN '}  {f.message}")
+        if f.evidence:
+            print(f"           \u201c{f.evidence}\u201d")
+
+
+def cmd_check(ws, args):
+    from jobseeker.answers import load_profile
+    from jobseeker.applications import knockouts, resolve
+    job, folder = resolve(ws, args.job)
+    print(f"{job['company']} — {job['title'].strip()}")
+    print_flags(knockouts(ws, job, folder, load_profile(ws)))
+    if not folder:
+        print("(posting only; `prep` it to also check the application questions)")
 
 
 def cmd_prep(ws, args):
@@ -119,7 +144,13 @@ def cmd_prep(ws, args):
     if folder and not args.force:
         print(f"Already prepared: {ws.rel(folder)}\n(use --force to re-fetch; your edits to form.toml would be lost)")
         return
-    folder, todo = prep_job(ws, load_profile(ws), job, folder)
+    prof = load_profile(ws)
+    folder, todo = prep_job(ws, prof, job, folder)
+    from jobseeker.applications import knockouts
+    flags = knockouts(ws, job, folder, prof)
+    if flags:
+        print("Knock-out warnings:")
+        print_flags(flags)
     if todo is None:
         print(f"Prepared {ws.rel(folder)} (manual apply: {job['source']} forms aren't pre-filled)")
         return
@@ -230,6 +261,8 @@ def parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("list", help="numbered matches from the latest run")
     s.add_argument("--top", type=int, default=30)
+    s = sub.add_parser("check", help="knock-out warnings for a job (posting + application questions)")
+    s.add_argument("job", help="number from `list`, a posting URL, or an application folder")
     s = sub.add_parser("prep", help="fetch a job's form and auto-answer it")
     s.add_argument("job", help="number from `list`, a posting URL, or an application folder")
     s.add_argument("--force", action="store_true", help="re-fetch and overwrite form.toml")
@@ -261,7 +294,7 @@ def parser() -> argparse.ArgumentParser:
     return p
 
 
-COMMANDS = {"run": cmd_run, "verify": cmd_verify, "add": cmd_add, "list": cmd_list, "prep": cmd_prep,
+COMMANDS = {"run": cmd_run, "verify": cmd_verify, "add": cmd_add, "list": cmd_list, "check": cmd_check, "prep": cmd_prep,
             "fill": cmd_fill, "cover": cmd_cover, "mark": cmd_mark, "status": cmd_status, "daily": cmd_daily,
             "web": cmd_web, "schedule": cmd_schedule}
 

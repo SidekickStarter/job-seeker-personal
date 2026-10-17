@@ -13,6 +13,7 @@ boards (Greenhouse, Lever, Ashby, Workday) **directly**, the same data each comp
 page shows, and:
 
 - **Flags new roles on every run** (e.g. each weekday morning) at the companies you choose, and filters them by title, seniority, work mode and *your* commute area (remote: anywhere in the country; hybrid/onsite: only where you'd actually go).
+- **Warns you about knock-outs before you apply**: requirements in the posting or its form that you don't meet (no visa sponsorship, citizenship or security clearance required, a higher degree, more years, pay below your floor). Each warning quotes the line it comes from, and strong matches with a likely knock-out aren't auto-prepared.
 - **Scores and explains** every match against the kinds of work you're good at ("title: ledger · desc: kafka, payments · stack: java").
 - **Prepares the application before you open it**: fetches the real form questions, answers the standard ones from your profile (work authorization, sponsorship, salary, location, EEO preferences…), and flags the few that need you.
 - **Pre-fills the form in your browser** (Greenhouse, Ashby). You review it and click Submit yourself.
@@ -52,13 +53,14 @@ Then edit `profile.toml` (your details, resume path and answer rules) and `confi
 |---|---|
 | ![Matches grouped by the day they were found](docs/screenshots/by-date.png) | ![Cover letter drafting](docs/screenshots/cover-letter.png) |
 | **Matches**: sort by any column, or group by the run that found them. Every application question is answered or flagged. | **Cover letters**: drafted from the posting and your resume, then edited, copied, or exported to PDF and attached to the form. |
-| ![Settings](docs/screenshots/settings.png) | |
-| **Settings**: add a company by name or link, toggle it, and tune filters and scoring. Every change is validated before saving. | |
+| ![Knock-out warning](docs/screenshots/knockout.png) | ![Settings](docs/screenshots/settings.png) |
+| **Knock-out warnings**: "✗ knock-out" when the posting states a requirement you don't meet, "! check" for softer ones, with the quoted evidence. | **Settings**: add a company by name or link, toggle it, and tune filters and scoring. Every change is validated before saving. |
 
 Or from the terminal:
 
 ```
-jobseeker list                       # numbered matches with status
+jobseeker list                       # numbered matches with status (✗ = likely knock-out)
+jobseeker check 3                    # knock-out warnings for #3, with the quoted evidence
 jobseeker prep 3                     # fetch #3's form, auto-answer it -> applications/<job>/form.toml
 jobseeker fill 3                     # open it pre-filled in Chrome; you review and Submit
 jobseeker cover generate 3           # draft cover_letter.md (uses the local `claude` CLI)
@@ -86,6 +88,7 @@ flowchart LR
 - **Adapters** (`jobseeker/sources/`) turn each board's public API into `Job` objects. Each one registers a `Source` with up to three capabilities: `fetch_jobs`, `fetch_form` (enables prep) and `fill` (enables browser pre-fill). Adding a board is one module: see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Matching** (`matching.py`) infers work mode from structured fields when the board has them, and from location and description text otherwise ("3 days a week in the office" → hybrid, but "hybrid cloud" isn't). Then it applies your rule: remote must be in-country; hybrid/onsite must list an office in your metro.
 - **Scoring** is transparent keyword matching against *tracks* you define: title hits count 3×, description hits 1× (capped), with a bonus for your stack and a penalty for stacks you avoid. Every score comes with its reasons.
+- **Knock-outs** (`knockout.py`) are sentence-level text checks against your profile: explicit requirements ("requires an active Secret clearance", "Master's degree required", "will not sponsor") block; softer ones (years, pay range, "PhD or related field") warn. Alternatives such as "or equivalent experience" and "preferred" are recognized, so they don't trigger. They're heuristics with evidence, not verdicts.
 - **Answers** come from ordered regex rules in `profile.toml` that map question labels to preference lists. Each preference is matched exact → prefix → substring against the form's real options.
 - **Everything is files** in one workspace folder (`config.toml`, `profile.toml`, `applications/<job>/form.toml`, `digests/`), so the CLI, the web UI and your editor all see the same state.
 
@@ -111,7 +114,9 @@ flowchart LR
 
 `profile.toml` (from [`profile.example.toml`](jobseeker/templates/profile.example.toml)): your details, work
 authorization, salary text, EEO policy (`decline` or leave for you), and `[[rules]]` mapping question
-patterns to answers. `{city}`, `{sponsorship}` and the like expand from your details.
+patterns to answers. `{city}`, `{sponsorship}` and the like expand from your details. Knock-out checks
+use `sponsorship`, `authorized`, `citizenship`, `salary_min`, `years_experience`, `degree` and
+`clearance`; leave one blank to skip that check.
 
 ## Limitations
 

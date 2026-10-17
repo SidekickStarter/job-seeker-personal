@@ -51,6 +51,12 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   border: 1px solid var(--line); white-space: nowrap; }
 .pill.new { background: var(--good-soft); color: var(--good); border-color: transparent; }
 .pill.todo { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.pill.ko-block { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.pill.ko-warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.ko { border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 8px 12px; margin: 10px 0; }
+.ko.block { border-left-color: var(--bad); background: var(--bad-soft); }
+.ko strong { display: block; }
+.ko q { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; quotes: "“" "”"; }
 .pill.s-applied, .pill.s-interviewing, .pill.s-offer { background: var(--good-soft); color: var(--good); border-color: transparent; }
 .pill.s-prepared, .pill.s-filled { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .pill.s-rejected, .pill.s-withdrawn { color: var(--muted); }
@@ -145,6 +151,7 @@ details summary { cursor: pointer; color: var(--muted); margin-top: 14px; }
       <select id="f-status"><option value="">Any status</option><option value="none">Not started</option></select>
       <label>Min score <input type="number" id="f-min" value="0" step="0.5" style="width:70px"></label>
       <label><input type="checkbox" id="f-new"> New only</label>
+      <label title="Hide jobs whose posting states a requirement you don't meet"><input type="checkbox" id="f-ko"> Hide knock-outs</label>
       <div class="seg" id="f-view"><button data-view="list" class="on">All</button><button data-view="date">By date found</button></div>
       <span class="muted" id="f-count"></span>
     </div>
@@ -286,6 +293,12 @@ async function api(path, body) {
 }
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2600); }
 const pill = s => s ? `<span class="pill s-${esc(s)}">${esc(s)}</span>` : "";
+// Knock-out warnings (see jobseeker/knockout.py): "block" = a stated requirement you don't meet.
+const worst = flags => (flags || []).some(f => f.level === "block") ? "block" : (flags || []).length ? "warn" : "";
+const koPill = flags => { const w = worst(flags); if (!w) return "";
+  const tip = flags.map(f => f.message).join("\n");
+  return `<span class="pill ko-${w}" title="${esc(tip)}">${w === "block" ? "✗ knock-out" : "! check"}</span>`; };
+const koBox = flags => (flags || []).map(f => `<div class="ko ${f.level}"><strong>${f.level === "block" ? "✗ Likely knock-out" : "! Check before applying"}: ${esc(f.message)}</strong>${f.evidence ? `<q>${esc(f.evidence)}</q>` : ""}</div>`).join("");
 const modeShort = m => m.startsWith("in office") ? "office" : m.split(" ")[0];
 
 // ------------------------------------------------------------------ tabs
@@ -321,10 +334,11 @@ const fmtDate = d => d ? new Date(d + "T12:00").toLocaleDateString(undefined, {w
 
 function renderMatches() {
   const q = $("#f-q").value.toLowerCase(), c = $("#f-company").value, mode = $("#f-mode").value,
-        st = $("#f-status").value, min = parseFloat($("#f-min").value) || 0, onlyNew = $("#f-new").checked;
+        st = $("#f-status").value, min = parseFloat($("#f-min").value) || 0, onlyNew = $("#f-new").checked,
+        hideKo = $("#f-ko").checked;
   let rows = DATA.matches.filter(m => (!q || (m.title + " " + m.company).toLowerCase().includes(q))
     && (!c || m.company === c) && (!mode || modeShort(m.mode) === mode) && m.score >= min && (!onlyNew || m.new)
-    && (!st || (st === "none" ? !m.status : m.status === st)));
+    && (!st || (st === "none" ? !m.status : m.status === st)) && (!hideKo || worst(m.flags) !== "block"));
   const {key, dir} = SORT;
   rows.sort((a, b) => { const x = sortVal(a, key), y = sortVal(b, key);
     return (typeof x === "number" ? x - y : String(x).localeCompare(String(y))) * dir || b.score - a.score; });
@@ -349,13 +363,13 @@ function renderMatches() {
       <td class="num muted hide-sm">${m.n}</td><td class="num">${m.score.toFixed(1)}</td><td>${esc(m.company)}</td>
       <td>${esc(m.title)} ${m.new ? '<span class="pill new">new</span>' : ""}</td>
       <td class="hide-sm">${esc(modeShort(m.mode))}</td><td class="hide-sm muted" style="white-space:nowrap">${esc(fmtDate(m.found))}</td>
-      <td>${pill(m.status)} ${m.todo ? `<span class="pill todo">${m.todo} TODO</span>` : ""}</td></tr>`;
+      <td>${pill(m.status)} ${m.todo ? `<span class="pill todo">${m.todo} TODO</span>` : ""} ${koPill(m.flags)}</td></tr>`;
   }
   $("#m-body").innerHTML = html || `<tr><td colspan="7" class="empty">No matches with these filters.</td></tr>`;
   $("#m-body").querySelectorAll("tr[data-key]").forEach(tr => tr.onclick = () => select(tr.dataset.key, "#detail"));
 }
 document.querySelectorAll("#f-view button").forEach(b => b.onclick = () => { VIEW = b.dataset.view; store.set("view", VIEW); renderMatches(); });
-["#f-q", "#f-company", "#f-mode", "#f-status", "#f-min", "#f-new"].forEach(s => $(s).addEventListener("input", renderMatches));
+["#f-q", "#f-company", "#f-mode", "#f-status", "#f-min", "#f-new", "#f-ko"].forEach(s => $(s).addEventListener("input", renderMatches));
 
 function renderApps() {
   $("#a-body").innerHTML = DATA.applications.map(a => `<tr data-key="${esc(a.key)}" class="${SEL === a.key ? "sel" : ""}">
@@ -396,6 +410,7 @@ function renderDetail() {
     <div class="muted">${esc(j.company)} · ${esc(j.location || m?.location || "")} ${m ? "· " + esc(m.mode) : ""} ${j.score || m ? "· score " + esc(m?.score ?? j.score) : ""}</div>
     <div class="ids muted" style="margin-top:6px">Posting ${esc(j.job_id)}</div>
     ${m?.why ? `<div class="muted" style="margin-top:6px;font-size:12px">${esc(m.why)}</div>` : ""}
+    ${koBox(d.flags)}
     <div class="row">
       <a class="btn" href="${esc(j.url)}" target="_blank" rel="noopener">Open posting ↗</a>
       ${prepped ? `<button class="btn" id="d-reprep">Re-prep</button>` : `<button class="btn primary" id="d-prep">Prep application</button>`}

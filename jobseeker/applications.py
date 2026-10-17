@@ -13,6 +13,7 @@ import re
 import tomllib
 from pathlib import Path
 
+from jobseeker import knockout
 from jobseeker.answers import auto_answer
 from jobseeker.sources import SOURCES
 from jobseeker.store import set_status
@@ -80,6 +81,25 @@ def resolve(ws: Workspace, ref: str) -> tuple[dict, Path | None]:
     else:
         raise JobSeekerError(f"Don't know how to find {ref!r}: use a number from `list`, a job URL, or a folder.")
     return job, find_folder(ws, job)
+
+
+# --------------------------------------------------------------------------- knock-outs
+def posting_text(folder: Path) -> str:
+    """The description saved in job.md at prep time."""
+    md = folder / "job.md"
+    if not md.exists():
+        return ""
+    text = md.read_text()
+    m = re.search(r"## Description\s*\n(.*)", text, re.S)
+    return (m.group(1) if m else text).strip()
+
+
+def knockouts(ws: Workspace, job: dict, folder: Path | None, prof: dict) -> list[knockout.Flag]:
+    """Knock-out flags for a job: from the saved posting + form when prepared, else from the last run."""
+    if folder and (folder / "form.toml").exists():
+        return knockout.check(posting_text(folder), load_form(folder).get("q", []), prof)
+    row = next((r for r in load_matches(ws) if r["key"] == job["key"]), None)
+    return knockout.loads(row.get("flags", "")) if row else []
 
 
 # --------------------------------------------------------------------------- form.toml I/O

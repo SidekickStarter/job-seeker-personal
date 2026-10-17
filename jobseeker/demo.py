@@ -10,6 +10,8 @@ import shutil
 import tempfile
 from pathlib import Path
 
+from jobseeker import knockout
+from jobseeker.answers import load_profile
 from jobseeker.applications import write_form
 from jobseeker.models import Job
 from jobseeker.radar import write_csv
@@ -44,7 +46,16 @@ POSTINGS = [
      8.1, "data_platform", "Data platform / streaming | desc: data pipeline, etl, batch | stack: python, aws", 6),
     ("Quill Labs", "ashby", "q0111-0050", "Senior Software Engineer, Billing", "New York, NY", "hybrid",
      9.8, "payments", "Payments / fintech | title: billing | desc: payment, transaction | stack: python", 6),
+    ("Cobalt Data", "ashby", "c0ba17-0012", "Senior Software Engineer, Federal Cloud", "Remote - US", "remote",
+     10.4, "data_platform", "Data platform / streaming | desc: streaming, data pipeline | stack: java, aws", 1),
 ]
+
+# Snippets of posting text for a few jobs, run through the real knock-out checks (knockout.py).
+DESCRIPTIONS = {
+    "c0ba17-0012": "This role requires an active Secret clearance and U.S. citizenship.",
+    "7781002": "You have 15+ years of experience building data platforms at scale.",
+    "4410388": "The base salary range for this role is $140,000 - $165,000.",
+}
 
 DESCRIPTION = """Lumen Pay moves money for 40,000 small businesses. The Ledger Platform team owns the
 double-entry ledger every payment, refund and payout is recorded in: about 30 million entries a day,
@@ -112,15 +123,19 @@ def build_demo(target: Path | None = None) -> Workspace:
                  ("(555) 555-5555", "(555) 010-2030"), ('city = ""', 'city = "Brooklyn"'),
                  ('state = ""', 'state = "New York"'), ("/path/to/Resume.pdf", "resume.txt")):
         profile = profile.replace(a, b, 1)
+    profile = profile.replace('years_experience = ""', 'years_experience = "10"', 1)
+    profile = profile.replace('degree = ""', 'degree = "Bachelor\'s"', 1)
     (home / "profile.toml").write_text(profile)
     ws = Workspace.load(home)
+    prof = load_profile(ws)
 
     today = dt.date.today()
     jobs, seen = [], []
     for company, source, jid, title, loc, mode, score, track, why, ago in POSTINGS:
         j = Job(company, track, source, jid, title, loc, f"https://example.com/{source}/{jid}",
                 (today - dt.timedelta(days=ago + 1)).isoformat(), score=score, best_track=track, why=why,
-                mode=mode, mode_src="listed")
+                mode=mode, mode_src="listed", description=DESCRIPTIONS.get(jid, ""))
+        j.flags = knockout.dumps(knockout.check_posting(j.description, prof))
         jobs.append(j)
         seen.append((j.key, (today - dt.timedelta(days=ago)).isoformat(), company, title, j.url, score, track))
     jobs.sort(key=lambda j: -j.score)

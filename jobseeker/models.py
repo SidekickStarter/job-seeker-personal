@@ -20,6 +20,7 @@ class Job:
     why: str = ""
     mode: str = ""         # remote | hybrid | onsite | office (in office, hybrid vs onsite not stated)
     mode_src: str = ""     # listed (ATS field) | inferred (location/description text)
+    flags: str = ""        # knock-out warnings, JSON (see knockout.py)
 
     @property
     def key(self) -> str:

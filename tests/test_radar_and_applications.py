@@ -70,3 +70,21 @@ def test_job_from_url(ws):
     assert (ab["source"], ab["company"]) == ("ashby", "Beta")
     with pytest.raises(JobSeekerError):
         job_from_url(ws, "https://example.com/careers/1")
+
+
+def test_run_records_knockouts_and_daily_skips_them(ws, fake_http, monkeypatch):
+    from jobseeker import daily, knockout
+    fixture = __import__("json").loads(open("tests/fixtures/greenhouse_jobs.json").read())
+    fixture["jobs"][0]["content"] += " This role requires an active Top Secret clearance."
+    monkeypatch.setattr("jobseeker.util.http_json", lambda url, payload=None: fixture if "acme/jobs?content" in url else
+                        {"jobs": []} if "ashby" in url else [])
+    radar.run(ws)
+    row = next(r for r in load_matches(ws) if r["key"] == "greenhouse:Acme:101")
+    assert knockout.worst(knockout.loads(row["flags"])) == "block"
+    assert "⚠ block" in open(next(ws.digests_dir.glob("digest_*.md"))).read()
+
+    ws.db_path.unlink()                         # everything new again, with a low auto-prep cutoff
+    ws.cfg["settings"]["auto_prep_min_score"] = 0
+    summary = daily.daily(ws, notify_user=False)
+    assert "skipped (knock-out)" in summary
+    assert not any("acme" in p.name and p.name.endswith("101") for p in ws.apps_dir.glob("*"))

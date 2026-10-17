@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
+import tomllib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
+from jobseeker import knockout
 from jobseeker.matching import Matcher
 from jobseeker.models import Job
 from jobseeker.sources import SOURCES
@@ -66,6 +68,10 @@ def run(ws: Workspace, show_all=False, track=None, min_score=None, modes=None) -
         matched = [j for j in matched if j.best_track == track or j.company_track == track]
     min_score = min_score if min_score is not None else cfg["settings"]["min_score"]
     matched = sorted((j for j in matched if j.score >= min_score), key=lambda j: -j.score)
+    prof = load_profile_if_any(ws)
+    if prof:
+        for j in matched:
+            j.flags = knockout.dumps(knockout.check_posting(j.description, prof))
 
     db = open_db(ws)
     known = {r[0] for r in db.execute("select key from seen")}
@@ -83,6 +89,14 @@ def run(ws: Workspace, show_all=False, track=None, min_score=None, modes=None) -
     return RunResult(len(raw), len(companies), matched, new, errors, str(digest))
 
 
+def load_profile_if_any(ws: Workspace) -> dict | None:
+    """Knock-out checks need profile.toml; a run without one still works."""
+    if not ws.profile_path.exists():
+        return None
+    with open(ws.profile_path, "rb") as f:
+        return tomllib.load(f)
+
+
 def render_digest(cfg, jobs, scanned, matched, new, errors, show_all):
     labels = {k: v.get("label", k) for k, v in cfg["tracks"].items()}
     lines = [f"# Job Seeker — {dt.date.today():%a %b %d, %Y}", "",
@@ -98,7 +112,9 @@ def render_digest(cfg, jobs, scanned, matched, new, errors, show_all):
             lines += [f"### [{j.title}]({j.url}) — {j.company}  ·  score {j.score}",
                       f"{j.location or 'location n/a'} · **{mode_label(j)}**"
                       + (f" · posted {j.posted}" if j.posted else ""),
-                      f"_Why:_ {j.why}", ""]
+                      f"_Why:_ {j.why}"]
+            lines += [f"**⚠ {f.level}:** {f.message}" for f in knockout.loads(j.flags)]
+            lines.append("")
     if errors:
         lines += ["## Boards that failed", "",
                   "Fix the slug in config.toml, or run `jobseeker probe` to find the right board.", ""]
@@ -109,10 +125,11 @@ def render_digest(cfg, jobs, scanned, matched, new, errors, show_all):
 def write_csv(path, jobs, known):
     with open(path, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["score", "new", "track", "company", "title", "location", "mode", "posted", "url", "why", "key"])
+        w.writerow(["score", "new", "track", "company", "title", "location", "mode", "posted", "url", "why", "key",
+                    "flags"])
         for j in jobs:
             w.writerow([j.score, j.key not in known, j.best_track, j.company, j.title,
-                        j.location, mode_label(j), j.posted, j.url, j.why, j.key])
+                        j.location, mode_label(j), j.posted, j.url, j.why, j.key, j.flags])
 
 
 def verify(ws: Workspace):

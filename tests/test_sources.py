@@ -1,4 +1,4 @@
-from jobradar.sources import SOURCES
+from jobseeker.sources import SOURCES
 
 keep_all = lambda *_: True  # noqa: E731
 

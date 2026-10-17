@@ -6,8 +6,8 @@ import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-from jobradar import util
-from jobradar.sources import SOURCES
+from jobseeker import util
+from jobseeker.sources import SOURCES
 
 BOARD_PATTERNS = [
     ("greenhouse", r"(?:boards|job-boards)(?:\.eu)?\.greenhouse\.io/(?:embed/job_board\?for=)?([\w-]+)"),

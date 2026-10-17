@@ -17,11 +17,11 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, request, send_file
 
-from jobradar import config_edit, discover, store, util
-from jobradar.answers import load_profile
-from jobradar.applications import company_slug, find_folder, job_from_row, load_form, load_matches, prep_job, save_form
-from jobradar.sources import SOURCES
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker import config_edit, discover, store, util
+from jobseeker.answers import load_profile
+from jobseeker.applications import company_slug, find_folder, job_from_row, load_form, load_matches, prep_job, save_form
+from jobseeker.sources import SOURCES
+from jobseeker.workspace import JobSeekerError, Workspace
 
 STATIC = Path(__file__).parent / "static"
 PKG_ROOT = Path(__file__).resolve().parents[2]
@@ -45,10 +45,10 @@ def create_app(ws: Workspace) -> Flask:
     def guard():
         if (request.host or "").split(":")[0] not in ("127.0.0.1", "localhost"):
             abort(403)
-        if request.method == "POST" and request.headers.get("X-JR") != "1":
+        if request.method == "POST" and request.headers.get("X-JobSeeker") != "1":
             abort(403)
 
-    @app.errorhandler(JobRadarError)
+    @app.errorhandler(JobSeekerError)
     def user_error(e):
         return fail(str(e))
 
@@ -163,7 +163,7 @@ def create_app(ws: Workspace) -> Flask:
             return fail("Already prepared. Re-prep overwrites your edits to the form.")
         try:
             folder, todo = prep_job(ws, load_profile(ws), job, folder)
-        except JobRadarError:
+        except JobSeekerError:
             raise
         except Exception as e:
             return fail(f"Prep failed: {util.describe_error(e)}", 502)
@@ -202,7 +202,7 @@ def create_app(ws: Workspace) -> Flask:
     tasks, ids = {}, itertools.count(1)
 
     def start_task(kind, args, key=None):
-        """Run `jobradar <args>` in a subprocess, collecting its output for the UI to poll."""
+        """Run `jobseeker <args>` in a subprocess, collecting its output for the UI to poll."""
         for t in tasks.values():
             if t["kind"] == kind and t["key"] == key and t["code"] is None:
                 return t["id"]          # already running
@@ -210,7 +210,7 @@ def create_app(ws: Workspace) -> Flask:
         t = tasks[tid] = {"id": tid, "kind": kind, "key": key, "lines": [], "code": None}
         env = {**os.environ, "PYTHONUNBUFFERED": "1",
                "PYTHONPATH": os.pathsep.join(filter(None, [str(PKG_ROOT), os.environ.get("PYTHONPATH")]))}
-        proc = subprocess.Popen([sys.executable, "-m", "jobradar", "--home", str(home), *args], cwd=home,
+        proc = subprocess.Popen([sys.executable, "-m", "jobseeker", "--home", str(home), *args], cwd=home,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                 text=True, env=env)
 
@@ -376,7 +376,7 @@ def create_app(ws: Workspace) -> Flask:
 
 def serve(ws: Workspace, port: int = 8765, open_browser: bool = True) -> None:
     url = f"http://127.0.0.1:{port}"
-    print(f"Job Radar UI: {url}  (workspace {ws.home}; Ctrl-C to stop)")
+    print(f"Job Seeker UI: {url}  (workspace {ws.home}; Ctrl-C to stop)")
     if open_browser:
         threading.Timer(1.0, webbrowser.open, [url]).start()
     create_app(ws).run(host="127.0.0.1", port=port, threaded=True)

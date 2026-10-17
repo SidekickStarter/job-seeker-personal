@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from jobradar import util
-from jobradar.workspace import Workspace
+from jobseeker import util
+from jobseeker.workspace import Workspace
 
 FIXTURES = Path(__file__).parent / "fixtures"
-TEMPLATES = Path(__file__).parent.parent / "jobradar" / "templates"
+TEMPLATES = Path(__file__).parent.parent / "jobseeker" / "templates"
 
 ROUTES = [
     (r"boards-api\.greenhouse\.io/v1/boards/acme/jobs\?content=true$", "greenhouse_jobs.json"),

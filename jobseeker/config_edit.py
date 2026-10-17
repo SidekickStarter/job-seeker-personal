@@ -1,4 +1,4 @@
-"""Safe edits to config.toml (used by the web Settings tab and `jobradar add`).
+"""Safe edits to config.toml (used by the web Settings tab and `jobseeker add`).
 
 Edited with tomlkit so comments and layout survive; only values that actually change are
 rewritten. Every edit is re-parsed and every regex compiled before writing, so a bad entry
@@ -11,10 +11,10 @@ import tomllib
 
 import tomlkit
 
-from jobradar.matching import Matcher, kw_regex
-from jobradar.radar import MODES
-from jobradar.sources import SOURCES
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker.matching import Matcher, kw_regex
+from jobseeker.radar import MODES
+from jobseeker.sources import SOURCES
+from jobseeker.workspace import JobSeekerError, Workspace
 
 NO_TRACK = "none"   # a company that gets no scoring-group bonus
 _LOCK = threading.Lock()
@@ -148,23 +148,23 @@ def add_company(ws: Workspace, name: str, ats: str, track: str = NO_TRACK, slug:
                 host: str | None = None, tenant: str | None = None, site: str | None = None) -> None:
     name, track = (name or "").strip(), track or NO_TRACK
     if not name or ats not in SOURCES:
-        raise JobRadarError("Name and board are required")
+        raise JobSeekerError("Name and board are required")
     if any(x["name"].lower() == name.lower() for x in ws.cfg["companies"]):
-        raise JobRadarError(f"{name} is already in your list")
+        raise JobSeekerError(f"{name} is already in your list")
     if track != NO_TRACK and track not in ws.cfg["tracks"]:
-        raise JobRadarError("Unknown scoring group")
+        raise JobSeekerError("Unknown scoring group")
     t = tomlkit.table()
     t["name"], t["track"], t["ats"] = name, track, ats
     if ats == "workday":
         for k, v in (("host", host), ("tenant", tenant), ("site", site)):
             if not v:
-                raise JobRadarError(f"Workday needs {k}")
+                raise JobSeekerError(f"Workday needs {k}")
             t[k] = v
         t["search"] = tarray(["senior software engineer", "staff software engineer"])
         t["max_results"] = 100
     else:
         if not slug:
-            raise JobRadarError("Board name is required")
+            raise JobSeekerError("Board name is required")
         t["slug"] = slug
     t["enabled"] = True
     edit_config(ws, lambda doc: doc["companies"].append(t))
@@ -182,6 +182,6 @@ def update_company(ws: Workspace, name: str, enabled: bool | None = None, track:
                 if remove:
                     doc["companies"].remove(x)
                 return
-        raise JobRadarError(f"Company {name!r} not found")
+        raise JobSeekerError(f"Company {name!r} not found")
     edit_config(ws, change)
 

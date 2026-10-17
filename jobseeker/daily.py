@@ -11,10 +11,10 @@ import platform
 import shutil
 import subprocess
 
-from jobradar import radar
-from jobradar.answers import load_profile
-from jobradar.applications import find_folder, job_from_row, load_matches, prep_job
-from jobradar.workspace import Workspace
+from jobseeker import radar
+from jobseeker.answers import load_profile
+from jobseeker.applications import find_folder, job_from_row, load_matches, prep_job
+from jobseeker.workspace import Workspace
 
 
 def notify(title: str, message: str) -> None:
@@ -73,5 +73,5 @@ def daily(ws: Workspace, notify_user: bool = True) -> str:
     print(f"Summary: {summary}")
     if new and notify_user:
         top = max(new, key=lambda r: float(r["score"]))
-        notify("Job Radar", f"{summary}. Top: {top['company']} — {top['title'][:60]}")
+        notify("Job Seeker", f"{summary}. Top: {top['company']} — {top['title'][:60]}")
     return summary

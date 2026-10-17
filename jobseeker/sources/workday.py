@@ -4,10 +4,10 @@ Undocumented and large boards are slow, so each company lists `search` terms and
 Listings only; forms aren't pre-filled."""
 from __future__ import annotations
 
-from jobradar import util
-from jobradar.models import Job
-from jobradar.sources import Source, register
-from jobradar.util import join_locs, strip_html
+from jobseeker import util
+from jobseeker.models import Job
+from jobseeker.sources import Source, register
+from jobseeker.util import join_locs, strip_html
 
 
 def fetch_jobs(c, keep):

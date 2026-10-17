@@ -1,4 +1,4 @@
-# Your details and answer rules. `jobradar init` copies this to profile.toml; keep that file private.
+# Your details and answer rules. `jobseeker init` copies this to profile.toml; keep that file private.
 # Every value under [me] and [work] can be referenced in rule answers as {name}.
 
 [me]

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Job Radar</title>
+<title>Job Seeker</title>
 <style>
 :root {
   --bg: #f7f7f5; --panel: #fff; --text: #1d1d1f; --muted: #6e6e73; --line: #e3e3e0;
@@ -124,7 +124,7 @@ details summary { cursor: pointer; color: var(--muted); margin-top: 14px; }
 </head>
 <body>
 <header>
-  <h1>Job Radar</h1>
+  <h1>Job Seeker</h1>
   <nav>
     <button data-tab="matches" class="on">Matches</button>
     <button data-tab="apps">Applications</button>
@@ -249,7 +249,7 @@ details summary { cursor: pointer; color: var(--muted); margin-top: 14px; }
       <div class="panel">
         <div class="row"><strong>Fetch new jobs</strong><span style="margin-left:auto"></span>
           <button class="btn primary" id="run-now">Run now</button></div>
-        <p class="muted">Same as the scheduled <code>jobradar daily</code>: reads every company's job board, then auto-preps new matches that score at or above your cutoff. Takes about a minute.</p>
+        <p class="muted">Same as the scheduled <code>jobseeker daily</code>: reads every company's job board, then auto-preps new matches that score at or above your cutoff. Takes about a minute.</p>
         <pre class="log" id="run-log">Recent runs load here.</pre>
       </div>
       <div class="panel">
@@ -278,7 +278,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 let DATA = {matches: [], applications: [], statuses: []}, SEL = null, SUB = "form";
 
 async function api(path, body) {
-  const opt = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json", "X-JR": "1"}, body: JSON.stringify(body)};
+  const opt = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json", "X-JobSeeker": "1"}, body: JSON.stringify(body)};
   const r = await fetch(path, opt);
   const j = await r.json().catch(() => ({error: `HTTP ${r.status}`}));
   if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
@@ -310,8 +310,8 @@ async function load() {
 }
 
 // View + sort, remembered per browser (best effort; the page works without storage).
-const store = {get(k, d) { try { return JSON.parse(localStorage.getItem("jr." + k)) ?? d; } catch { return d; } },
-               set(k, v) { try { localStorage.setItem("jr." + k, JSON.stringify(v)); } catch {} }};
+const store = {get(k, d) { try { return JSON.parse(localStorage.getItem("jobseeker." + k)) ?? d; } catch { return d; } },
+               set(k, v) { try { localStorage.setItem("jobseeker." + k, JSON.stringify(v)); } catch {} }};
 let VIEW = store.get("view", "list"), SORT = store.get("sort", {key: "score", dir: -1});
 const COLS = [["n", "#", "hide-sm num"], ["score", "Score", "num"], ["company", "Company", ""], ["title", "Title", ""],
               ["mode", "Mode", "hide-sm"], ["found", "Found", "hide-sm"], ["status", "Status", ""]];

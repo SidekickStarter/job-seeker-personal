@@ -1,8 +1,8 @@
 """Where your config and data live.
 
 A workspace is a folder holding config.toml (companies, filters, scoring), profile.toml (your
-details and answer rules) and everything Job Radar writes: the SQLite database, digests,
-application folders, notes and logs. Pick it with --home, the JOBRADAR_HOME environment variable,
+details and answer rules) and everything Job Seeker writes: the SQLite database, digests,
+application folders, notes and logs. Pick it with --home, the JOBSEEKER_HOME environment variable,
 or by running commands from inside it.
 """
 from __future__ import annotations
@@ -16,15 +16,15 @@ CONFIG_NAME = "config.toml"
 PROFILE_NAME = "profile.toml"
 
 
-class JobRadarError(Exception):
+class JobSeekerError(Exception):
     """A problem the user can fix (missing config, unknown job, ...). Shown without a traceback."""
 
 
 def find_home(explicit: str | os.PathLike | None = None) -> Path:
     if explicit:
         return Path(explicit).expanduser().resolve()
-    if os.environ.get("JOBRADAR_HOME"):
-        return Path(os.environ["JOBRADAR_HOME"]).expanduser().resolve()
+    if os.environ.get("JOBSEEKER_HOME"):
+        return Path(os.environ["JOBSEEKER_HOME"]).expanduser().resolve()
     return Path.cwd().resolve()
 
 
@@ -41,8 +41,8 @@ class Workspace:
 
     def reload(self) -> dict:
         if not self.config_path.exists():
-            raise JobRadarError(f"No {CONFIG_NAME} in {self.home}. Run `jobradar init` there "
-                                f"(or pass --home / set JOBRADAR_HOME).")
+            raise JobSeekerError(f"No {CONFIG_NAME} in {self.home}. Run `jobseeker init` there "
+                                f"(or pass --home / set JOBSEEKER_HOME).")
         with open(self.config_path, "rb") as f:
             self.cfg = tomllib.load(f)
         return self.cfg
@@ -62,7 +62,7 @@ class Workspace:
 
     @property
     def db_path(self) -> Path:
-        return self.home / self.settings.get("db_path", "job_radar.db")
+        return self.home / self.settings.get("db_path", "jobseeker.db")
 
     @property
     def digests_dir(self) -> Path:

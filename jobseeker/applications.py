@@ -13,11 +13,11 @@ import re
 import tomllib
 from pathlib import Path
 
-from jobradar.answers import auto_answer
-from jobradar.sources import SOURCES
-from jobradar.store import set_status
-from jobradar.util import safe
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker.answers import auto_answer
+from jobseeker.sources import SOURCES
+from jobseeker.store import set_status
+from jobseeker.util import safe
+from jobseeker.workspace import JobSeekerError, Workspace
 
 
 # --------------------------------------------------------------------------- finding a job
@@ -50,7 +50,7 @@ def job_from_url(ws: Workspace, url: str) -> dict:
     elif m := re.search(r"jobs\.ashbyhq\.com/([^/?#]+)/([0-9a-f-]{36})", url):
         slug, jid, source = m.group(1), m.group(2), "ashby"
     else:
-        raise JobRadarError("Only Greenhouse (…greenhouse.io/<company>/jobs/<id>) and Ashby "
+        raise JobSeekerError("Only Greenhouse (…greenhouse.io/<company>/jobs/<id>) and Ashby "
                             "(jobs.ashbyhq.com/<company>/<id>) URLs are supported; or use a number from `list`.")
     name = next((c["name"] for c in ws.cfg["companies"] if c.get("slug") == slug and c["ats"] == source), slug)
     return {"key": f"{source}:{name}:{jid}", "source": source, "company": name, "job_id": jid,
@@ -71,14 +71,14 @@ def resolve(ws: Workspace, ref: str) -> tuple[dict, Path | None]:
         rows = load_matches(ws)
         n = int(ref)
         if not 1 <= n <= len(rows):
-            raise JobRadarError(f"No match #{n}; `list` shows 1–{len(rows)}." if rows
-                                else "No matches yet. Run `jobradar run` first.")
+            raise JobSeekerError(f"No match #{n}; `list` shows 1–{len(rows)}." if rows
+                                else "No matches yet. Run `jobseeker run` first.")
         job = job_from_row(ws, rows[n - 1])
     elif ref.startswith("http"):
         rows = {r["url"]: r for r in load_matches(ws)}
         job = job_from_row(ws, rows[ref]) if ref in rows else job_from_url(ws, ref)
     else:
-        raise JobRadarError(f"Don't know how to find {ref!r}: use a number from `list`, a job URL, or a folder.")
+        raise JobSeekerError(f"Don't know how to find {ref!r}: use a number from `list`, a job URL, or a folder.")
     return job, find_folder(ws, job)
 
 

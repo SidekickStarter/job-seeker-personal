@@ -24,6 +24,6 @@ jobs:
       - run: pytest -q
       - name: CLI smoke test
         run: |
-          jobradar --version
-          jobradar --home "$RUNNER_TEMP/ws" init
-          python -c "from jobradar.demo import build_demo; build_demo()"
+          jobseeker --version
+          jobseeker --home "$RUNNER_TEMP/ws" init
+          python -c "from jobseeker.demo import build_demo; build_demo()"

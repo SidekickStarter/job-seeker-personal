@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime as dt
 import sqlite3
 
-from jobradar.workspace import Workspace
+from jobseeker.workspace import Workspace
 
 STATUSES = ("prepared", "filled", "applied", "interviewing", "rejected", "offer", "withdrawn")
 

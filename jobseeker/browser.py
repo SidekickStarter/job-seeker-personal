@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jobradar.answers import pick_option
+from jobseeker.answers import pick_option
 
-BROWSER_DIR = Path.home() / ".job_radar" / "browser"   # keeps your logins/cookies between runs
+BROWSER_DIR = Path.home() / ".jobseeker" / "browser"   # keeps your logins/cookies between runs
 
 # Finds the smallest element whose text starts with the question label, walks up to the
 # nearest ancestor containing `sel`, and tags it data-jr=<tag> so Playwright can target it.
@@ -123,25 +123,29 @@ def mark_unfilled(page, report):
 def fill_job(ws, job: dict, folder: Path, prof: dict, headless: bool = False, screenshot: str | None = None):
     """Open the application form and pre-fill it from form.toml. Headed: waits until you close the
     window (you review and submit). Headless: saves a screenshot instead (for testing)."""
-    from jobradar.applications import load_form
-    from jobradar.sources import SOURCES
-    from jobradar.store import set_status
-    from jobradar.workspace import JobRadarError
+    from jobseeker.applications import load_form
+    from jobseeker.sources import SOURCES
+    from jobseeker.store import set_status
+    from jobseeker.workspace import JobSeekerError
 
     source = SOURCES.get(job["source"])
     if not source or not source.fill:
-        raise JobRadarError(f"{job['source']} forms can't be pre-filled; apply at {job['url']}")
+        raise JobSeekerError(f"{job['source']} forms can't be pre-filled; apply at {job['url']}")
     form = load_form(folder)
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        raise JobRadarError("`fill` needs Playwright: pip install 'job-radar[fill]' && playwright install chromium") from None
+        raise JobSeekerError("`fill` needs Playwright: pip install 'job-seeker[fill]' && playwright install chromium") from None
 
     with sync_playwright() as p:
         if headless:
             browser = p.chromium.launch()
             ctx = browser.new_context(viewport={"width": 1280, "height": 1000})
         else:
+            old = Path.home() / ".job_radar" / "browser"     # pre-rename location: keep your logins
+            if old.exists() and not BROWSER_DIR.exists():
+                BROWSER_DIR.parent.mkdir(parents=True, exist_ok=True)
+                old.rename(BROWSER_DIR)
             BROWSER_DIR.mkdir(parents=True, exist_ok=True)
             try:   # your installed Chrome if there is one, else Playwright's Chromium
                 ctx = p.chromium.launch_persistent_context(BROWSER_DIR, headless=False, channel="chrome",

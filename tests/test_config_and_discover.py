@@ -2,9 +2,9 @@ import re
 
 import pytest
 
-from jobradar import config_edit
-from jobradar.discover import boards_in, name_guesses
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker import config_edit
+from jobseeker.discover import boards_in, name_guesses
+from jobseeker.workspace import JobSeekerError, Workspace
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def test_long_lists_are_packed_several_per_line():
 
 def test_add_update_remove_company(cws):
     config_edit.add_company(cws, "Acme", "greenhouse", "payments", slug="acme")
-    with pytest.raises(JobRadarError, match="already"):
+    with pytest.raises(JobSeekerError, match="already"):
         config_edit.add_company(cws, "acme", "greenhouse", slug="acme")
     config_edit.update_company(cws, "Acme", enabled=False, track="backend")
     acme = next(c for c in cws.cfg["companies"] if c["name"] == "Acme")
@@ -53,7 +53,7 @@ def test_add_update_remove_company(cws):
 
 
 def test_workday_company_needs_its_site(cws):
-    with pytest.raises(JobRadarError, match="Workday needs"):
+    with pytest.raises(JobSeekerError, match="Workday needs"):
         config_edit.add_company(cws, "Big Co", "workday", host="bigco.wd5.myworkdayjobs.com")
 
 

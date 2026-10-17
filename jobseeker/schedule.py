@@ -1,4 +1,4 @@
-"""Run `jobradar daily` on a schedule: a launchd agent on macOS, a cron line elsewhere."""
+"""Run `jobseeker daily` on a schedule: a launchd agent on macOS, a cron line elsewhere."""
 from __future__ import annotations
 
 import os
@@ -8,14 +8,14 @@ import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-from jobradar.workspace import Workspace
+from jobseeker.workspace import Workspace
 
-LABEL = "com.jobradar.daily"
+LABEL = "com.jobseeker.daily"
 PLIST = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 
 
 def command(ws: Workspace) -> list[str]:
-    return [sys.executable, "-m", "jobradar", "--home", str(ws.home), "daily"]
+    return [sys.executable, "-m", "jobseeker", "--home", str(ws.home), "daily"]
 
 
 def plist(ws: Workspace, hour: int, minute: int, weekdays: bool) -> str:
@@ -67,13 +67,13 @@ def install(ws: Workspace, hour: int = 8, minute: int = 0, weekdays: bool = True
     PLIST.write_text(plist(ws, hour, minute, weekdays))
     subprocess.run(["launchctl", "bootstrap", domain, str(PLIST)], check=True)
     when = f"{'weekdays' if weekdays else 'every day'} at {hour:02d}:{minute:02d}"
-    return (f"Scheduled `jobradar daily` {when} ({PLIST}).\nLog: {ws.logs_dir / 'daily.log'}\n"
+    return (f"Scheduled `jobseeker daily` {when} ({PLIST}).\nLog: {ws.logs_dir / 'daily.log'}\n"
             f"Run now: launchctl kickstart {domain}/{LABEL}")
 
 
 def uninstall() -> str:
     if platform.system() != "Darwin":
-        return "Remove the jobradar line from your crontab (`crontab -e`)."
+        return "Remove the jobseeker line from your crontab (`crontab -e`)."
     subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}/{LABEL}"], capture_output=True)
     PLIST.unlink(missing_ok=True)
     return "Schedule removed."

@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import tomllib
 
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker.workspace import JobSeekerError, Workspace
 
 EEO_RE = re.compile(r"gender|race|ethnic|hispanic|latino|veteran|disabilit|sexual orientation|transgender", re.I)
 DECLINE = ["Decline", "I don't wish", "I do not wish", "Prefer not", "not to answer", "not to disclose",
@@ -13,7 +13,7 @@ DECLINE = ["Decline", "I don't wish", "I do not wish", "Prefer not", "not to ans
 
 def load_profile(ws: Workspace) -> dict:
     if not ws.profile_path.exists():
-        raise JobRadarError(f"{ws.profile_path} not found. Run `jobradar init`, then fill in profile.toml.")
+        raise JobSeekerError(f"{ws.profile_path} not found. Run `jobseeker init`, then fill in profile.toml.")
     with open(ws.profile_path, "rb") as f:
         return tomllib.load(f)
 

@@ -10,17 +10,17 @@ pip install -e ".[dev]"
 pytest && ruff check .
 ```
 
-Tests run offline: `tests/conftest.py` replaces `jobradar.util.http_json` with fixtures from
+Tests run offline: `tests/conftest.py` replaces `jobseeker.util.http_json` with fixtures from
 `tests/fixtures/`. Please add a test with any behavior change.
 
-To try the UI without touching your own data: `jobradar demo`.
+To try the UI without touching your own data: `jobseeker demo`.
 
 ## Project layout
 
 ```
-jobradar/
-  cli.py            the `jobradar` command
-  workspace.py      where config and data live (Workspace, JobRadarError)
+jobseeker/
+  cli.py            the `jobseeker` command
+  workspace.py      where config and data live (Workspace, JobSeekerError)
   sources/          one module per job board (see below)
   matching.py       title / location / work-mode filters and scoring
   radar.py          a run: fetch, filter, score, record, write digest
@@ -37,12 +37,12 @@ jobradar/
 
 ## Adding a job board
 
-Create `jobradar/sources/<board>.py`:
+Create `jobseeker/sources/<board>.py`:
 
 ```python
-from jobradar import util
-from jobradar.models import Job
-from jobradar.sources import Source, register
+from jobseeker import util
+from jobseeker.models import Job
+from jobseeker.sources import Source, register
 
 
 def fetch_jobs(company, keep):
@@ -57,9 +57,9 @@ def fetch_jobs(company, keep):
 register(Source("<board>", fetch_jobs))
 ```
 
-Then import it at the bottom of `jobradar/sources/__init__.py`, add a fixture and a test in
+Then import it at the bottom of `jobseeker/sources/__init__.py`, add a fixture and a test in
 `tests/test_sources.py`, and (optionally) a URL pattern in `discover.BOARD_PATTERNS` so
-`jobradar add` can recognize the board.
+`jobseeker add` can recognize the board.
 
 - Set `Job.mode` (`remote`/`hybrid`/`onsite`) when the board says so; otherwise the matcher infers it.
 - `keep(job, prelim=True)` lets slow boards skip detail requests for postings that will be filtered anyway (see `workday.py`).
@@ -70,4 +70,4 @@ Then import it at the bottom of `jobradar/sources/__init__.py`, add a fixture an
 
 - No auto-submission, ever. Pull requests that add it won't be merged.
 - Only use endpoints that the board's public job pages already use, and keep request volume low.
-- Never commit personal data. `config.toml`, `profile.toml` and workspace data are gitignored; use `jobradar demo` data in screenshots.
+- Never commit personal data. `config.toml`, `profile.toml` and workspace data are gitignored; use `jobseeker demo` data in screenshots.

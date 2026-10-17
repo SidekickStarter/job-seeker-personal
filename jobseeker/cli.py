@@ -1,22 +1,22 @@
-"""jobradar: watch company job boards, score postings, and prepare applications for review.
+"""jobseeker: watch company job boards, score postings, and prepare applications for review.
 
-  jobradar init                      create config.toml + profile.toml in the current folder
-  jobradar web                       open the local web UI (everything below, in a browser)
-  jobradar demo                      try the UI with sample data, no setup needed
+  jobseeker init                      create config.toml + profile.toml in the current folder
+  jobseeker web                       open the local web UI (everything below, in a browser)
+  jobseeker demo                      try the UI with sample data, no setup needed
 
-  jobradar run [--all] [--mode remote,hybrid] [--track T] [--min-score N]
-  jobradar add "Stripe"              find a company's job board and add it (name, careers URL, or posting URL)
-  jobradar verify                    check every configured board
+  jobseeker run [--all] [--mode remote,hybrid] [--track T] [--min-score N]
+  jobseeker add "Stripe"              find a company's job board and add it (name, careers URL, or posting URL)
+  jobseeker verify                    check every configured board
 
-  jobradar list [--top 30]           numbered matches from the latest run, with status
-  jobradar prep <#|url|folder>       fetch the form and auto-answer it from profile.toml
-  jobradar fill <#|url|folder>       pre-fill it in a browser; you review and click Submit
-  jobradar cover generate <job>      draft a cover letter (local `claude` CLI); `cover pdf <job>` renders it
-  jobradar mark <job> applied        prepared | filled | applied | interviewing | rejected | offer | withdrawn
-  jobradar status
+  jobseeker list [--top 30]           numbered matches from the latest run, with status
+  jobseeker prep <#|url|folder>       fetch the form and auto-answer it from profile.toml
+  jobseeker fill <#|url|folder>       pre-fill it in a browser; you review and click Submit
+  jobseeker cover generate <job>      draft a cover letter (local `claude` CLI); `cover pdf <job>` renders it
+  jobseeker mark <job> applied        prepared | filled | applied | interviewing | rejected | offer | withdrawn
+  jobseeker status
 
-  jobradar daily                     run + auto-prep strong new matches + notification (for schedules)
-  jobradar schedule install [--at 08:00] [--every-day]
+  jobseeker daily                     run + auto-prep strong new matches + notification (for schedules)
+  jobseeker schedule install [--at 08:00] [--every-day]
 
 Nothing is ever submitted automatically.
 """
@@ -27,8 +27,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from jobradar import __version__
-from jobradar.workspace import JobRadarError, Workspace, find_home
+from jobseeker import __version__
+from jobseeker.workspace import JobSeekerError, Workspace, find_home
 
 TEMPLATES = Path(__file__).parent / "templates"
 
@@ -46,14 +46,14 @@ def cmd_init(args):
         print(f"created  {target}")
     gi = home / ".gitignore"
     if not gi.exists():
-        gi.write_text("# Job Radar personal data\nprofile.toml\n*.db\ndigests/\napplications/\nlogs/\nreferrals/\n")
+        gi.write_text("# Job Seeker personal data\nprofile.toml\n*.db\ndigests/\napplications/\nlogs/\nreferrals/\n")
     print("\nNext: edit profile.toml (your details + resume path) and config.toml (companies, filters),\n"
-          "then `jobradar run` or `jobradar web`.")
+          "then `jobseeker run` or `jobseeker web`.")
 
 
 def cmd_demo(args):
-    from jobradar.demo import build_demo
-    from jobradar.web import serve
+    from jobseeker.demo import build_demo
+    from jobseeker.web import serve
     ws = build_demo(Path(args.dir) if args.dir else None)
     print(f"Demo workspace with sample data: {ws.home}")
     serve(ws, args.port, not args.no_open)
@@ -61,7 +61,7 @@ def cmd_demo(args):
 
 # --------------------------------------------------------------------------- finding jobs
 def cmd_run(ws, args):
-    from jobradar import radar
+    from jobseeker import radar
     res = radar.run(ws, show_all=args.all, track=args.track, min_score=args.min_score,
                     modes=args.mode.split(",") if args.mode else None)
     print(f"Scanned {res.scanned} postings from {res.companies} companies; "
@@ -74,16 +74,16 @@ def cmd_run(ws, args):
 
 
 def cmd_verify(ws, args):
-    from jobradar import radar
+    from jobseeker import radar
     for c, status, n in radar.verify(ws):
         print(f"{c['name']:<18} {c['ats']:<10} {n:>5}  {status}")
 
 
 def cmd_add(ws, args):
-    from jobradar import config_edit, discover
+    from jobseeker import config_edit, discover
     name, found, note = discover.detect(args.query)
     if not found:
-        raise JobRadarError(note)
+        raise JobSeekerError(note)
     for i, b in enumerate(found, 1):
         print(f"  {i}. {b['ats']:<10} {b.get('slug') or b['host'] + '/' + b['site']:<40} {b['count']:>5} open jobs")
     if args.dry_run:
@@ -92,16 +92,16 @@ def cmd_add(ws, args):
     name = args.name or name
     config_edit.add_company(ws, name, b["ats"], args.track, slug=b.get("slug"), host=b.get("host"),
                             tenant=b.get("tenant"), site=b.get("site"))
-    print(f"Added {name} ({b['ats']}). Its jobs appear on the next `jobradar run`.")
+    print(f"Added {name} ({b['ats']}). Its jobs appear on the next `jobseeker run`.")
 
 
 # --------------------------------------------------------------------------- applications
 def cmd_list(ws, args):
-    from jobradar import store
-    from jobradar.applications import load_matches
+    from jobseeker import store
+    from jobseeker.applications import load_matches
     rows = load_matches(ws)
     if not rows:
-        raise JobRadarError("No matches yet. Run `jobradar run` first.")
+        raise JobSeekerError("No matches yet. Run `jobseeker run` first.")
     status = {k: a["status"] for k, a in store.applications(ws).items()}
     print(f"{'#':>3}  {'score':>5}  {'status':<12} {'company':<12} {'mode':<7} title")
     for i, r in enumerate(rows[:args.top], 1):
@@ -113,8 +113,8 @@ def cmd_list(ws, args):
 
 
 def cmd_prep(ws, args):
-    from jobradar.answers import load_profile
-    from jobradar.applications import prep_job, resolve
+    from jobseeker.answers import load_profile
+    from jobseeker.applications import prep_job, resolve
     job, folder = resolve(ws, args.job)
     if folder and not args.force:
         print(f"Already prepared: {ws.rel(folder)}\n(use --force to re-fetch; your edits to form.toml would be lost)")
@@ -127,17 +127,17 @@ def cmd_prep(ws, args):
     for q in todo:
         print(f"  TODO {'(required) ' if q['required'] else ''}{q['label'][:90]}")
     if todo:
-        print("Answer them in form.toml (or in `jobradar web`), then run `fill`.")
+        print("Answer them in form.toml (or in `jobseeker web`), then run `fill`.")
 
 
 def cmd_fill(ws, args):
-    from jobradar import store
-    from jobradar.answers import load_profile
-    from jobradar.applications import resolve
-    from jobradar.browser import fill_job
+    from jobseeker import store
+    from jobseeker.answers import load_profile
+    from jobseeker.applications import resolve
+    from jobseeker.browser import fill_job
     job, folder = resolve(ws, args.job)
     if not folder:
-        raise JobRadarError(f"Not prepared yet. Run `jobradar prep {args.job}` first.")
+        raise JobSeekerError(f"Not prepared yet. Run `jobseeker prep {args.job}` first.")
     fill_job(ws, job, folder, load_profile(ws), headless=args.headless, screenshot=args.screenshot)
     if args.headless or args.no_prompt:
         return
@@ -147,11 +147,11 @@ def cmd_fill(ws, args):
 
 
 def cmd_cover(ws, args):
-    from jobradar import coverletter
-    from jobradar.applications import resolve
+    from jobseeker import coverletter
+    from jobseeker.applications import resolve
     job, folder = resolve(ws, args.job)
     if not folder or not (folder / "form.toml").exists():
-        raise JobRadarError(f"Not prepared yet. Run `jobradar prep {args.job}` first.")
+        raise JobSeekerError(f"Not prepared yet. Run `jobseeker prep {args.job}` first.")
     if args.action == "generate":
         coverletter.generate(ws, folder, args.notes, args.length)
     else:
@@ -159,40 +159,40 @@ def cmd_cover(ws, args):
 
 
 def cmd_mark(ws, args):
-    from jobradar import store
-    from jobradar.applications import resolve
+    from jobseeker import store
+    from jobseeker.applications import resolve
     job, folder = resolve(ws, args.job)
     store.set_status(ws, job, folder, args.status)
     print(f"{job['company']} — {job['title']}: {args.status}")
 
 
 def cmd_status(ws, args):
-    from jobradar import store
+    from jobseeker import store
     apps = sorted(store.applications(ws).values(), key=lambda a: a["updated"] or "", reverse=True)
     if not apps:
-        print("No applications yet. Start with `jobradar list` and `prep`.")
+        print("No applications yet. Start with `jobseeker list` and `prep`.")
     for a in apps:
         print(f"{a['updated']}  {a['status']:<12} {a['company'][:14]:<14} {a['title'][:60]:<60} {a['url']}")
 
 
 # --------------------------------------------------------------------------- automation
 def cmd_daily(ws, args):
-    from jobradar.daily import daily, notify
+    from jobseeker.daily import daily, notify
     try:
         daily(ws, notify_user=not args.no_notify)
     except Exception:
         if not args.no_notify:
-            notify("Job Radar", "Daily run failed. See logs/daily.log")
+            notify("Job Seeker", "Daily run failed. See logs/daily.log")
         raise
 
 
 def cmd_web(ws, args):
-    from jobradar.web import serve
+    from jobseeker.web import serve
     serve(ws, args.port, not args.no_open)
 
 
 def cmd_schedule(ws, args):
-    from jobradar import schedule
+    from jobseeker import schedule
     if args.action == "remove":
         print(schedule.uninstall())
         return
@@ -202,10 +202,10 @@ def cmd_schedule(ws, args):
 
 # --------------------------------------------------------------------------- main
 def parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="jobradar", description=__doc__,
+    p = argparse.ArgumentParser(prog="jobseeker", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--home", help="workspace folder with config.toml (default: $JOBRADAR_HOME or current folder)")
-    p.add_argument("--version", action="version", version=f"jobradar {__version__}")
+    p.add_argument("--home", help="workspace folder with config.toml (default: $JOBSEEKER_HOME or current folder)")
+    p.add_argument("--version", action="version", version=f"jobseeker {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="command")
 
     s = sub.add_parser("init", help="create config.toml and profile.toml here")
@@ -274,7 +274,7 @@ def main(argv=None) -> None:
         if args.cmd == "demo":
             return cmd_demo(args)
         COMMANDS[args.cmd](Workspace.load(args.home), args)
-    except JobRadarError as e:
-        sys.exit(f"jobradar: {e}")
+    except JobSeekerError as e:
+        sys.exit(f"jobseeker: {e}")
     except KeyboardInterrupt:
         sys.exit(130)

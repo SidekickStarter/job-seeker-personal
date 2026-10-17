@@ -1,12 +1,12 @@
 """Greenhouse: public job board API (boards-api.greenhouse.io); forms pre-filled via the embed page."""
 from __future__ import annotations
 
-from jobradar import util
-from jobradar.answers import DECLINE, pick_option
-from jobradar.browser import NEAR_TEXT_JS, as_list, combo_pick, fill_file, location_pick
-from jobradar.models import Job
-from jobradar.sources import Source, register
-from jobradar.util import strip_html
+from jobseeker import util
+from jobseeker.answers import DECLINE, pick_option
+from jobseeker.browser import NEAR_TEXT_JS, as_list, combo_pick, fill_file, location_pick
+from jobseeker.models import Job
+from jobseeker.sources import Source, register
+from jobseeker.util import strip_html
 
 
 def fetch_jobs(c, keep):

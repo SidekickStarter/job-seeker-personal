@@ -1,6 +1,6 @@
 """A sample workspace (fictional companies and candidate) for trying the UI without any setup.
 
-`jobradar demo` builds it in a temp folder and opens the web UI. "Run now" in the demo fetches
+`jobseeker demo` builds it in a temp folder and opens the web UI. "Run now" in the demo fetches
 the real example companies from config.example.toml.
 """
 from __future__ import annotations
@@ -10,11 +10,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from jobradar.applications import write_form
-from jobradar.models import Job
-from jobradar.radar import write_csv
-from jobradar.store import open_db, set_status
-from jobradar.workspace import Workspace
+from jobseeker.applications import write_form
+from jobseeker.models import Job
+from jobseeker.radar import write_csv
+from jobseeker.store import open_db, set_status
+from jobseeker.workspace import Workspace
 
 TEMPLATES = Path(__file__).parent / "templates"
 
@@ -95,13 +95,13 @@ Alex Rivera is a senior backend engineer with 10 years of experience building pa
 systems. ... (Sample note: write yours here, or ask an assistant to draft one from the posting.)
 """
 
-RESUME = """Alex Rivera — Senior Software Engineer (sample resume for the Job Radar demo)
+RESUME = """Alex Rivera — Senior Software Engineer (sample resume for the Job Seeker demo)
 Experience: 10 years building payment ledgers, event-driven services (Java, Kafka, AWS) and data pipelines.
 """
 
 
 def build_demo(target: Path | None = None) -> Workspace:
-    home = Path(target or tempfile.mkdtemp(prefix="jobradar-demo-")).resolve()
+    home = Path(target or tempfile.mkdtemp(prefix="jobseeker-demo-")).resolve()
     if home.exists() and (home / "config.toml").exists():
         shutil.rmtree(home)
     home.mkdir(parents=True, exist_ok=True)
@@ -131,7 +131,7 @@ def build_demo(target: Path | None = None) -> Workspace:
     db.executemany("insert or replace into seen values (?,?,?,?,?,?,?)", seen)
     db.commit()
     (ws.digests_dir / f"digest_{today}.md").write_text(
-        f"# Job Radar — {today:%a %b %d, %Y}\n\nScanned 2,184 postings · {len(jobs)} matches · "
+        f"# Job Seeker — {today:%a %b %d, %Y}\n\nScanned 2,184 postings · {len(jobs)} matches · "
         f"**{len(new_today)} new**\n\n_(Sample digest. Click Run now to fetch real boards.)_\n")
 
     # One prepared application with a TODO, a cover letter and a referral note; two tracked ones.

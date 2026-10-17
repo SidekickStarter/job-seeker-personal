@@ -7,7 +7,7 @@ import re
 import urllib.error
 import urllib.request
 
-UA = "Mozilla/5.0 (job-radar; +https://github.com/SidekickStarter/job-seeker-personal)"
+UA = "Mozilla/5.0 (job-seeker; +https://github.com/SidekickStarter/job-seeker-personal)"
 TIMEOUT = 25
 TAG_RE = re.compile(r"<[^>]+>")
 

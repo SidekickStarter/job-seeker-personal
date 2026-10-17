@@ -2,10 +2,10 @@ import tomllib
 
 import pytest
 
-from jobradar import radar, store
-from jobradar.answers import load_profile
-from jobradar.applications import job_from_url, load_form, load_matches, prep_job, resolve, save_form, write_form
-from jobradar.workspace import JobRadarError
+from jobseeker import radar, store
+from jobseeker.answers import load_profile
+from jobseeker.applications import job_from_url, load_form, load_matches, prep_job, resolve, save_form, write_form
+from jobseeker.workspace import JobSeekerError
 
 
 def test_run_marks_only_unseen_matches_new(ws, fake_http):
@@ -68,5 +68,5 @@ def test_job_from_url(ws):
     assert (gh["source"], gh["company"], gh["job_id"]) == ("greenhouse", "Acme", "555")
     ab = job_from_url(ws, "https://jobs.ashbyhq.com/beta/aaaaaaaa-0000-0000-0000-000000000009/application")
     assert (ab["source"], ab["company"]) == ("ashby", "Beta")
-    with pytest.raises(JobRadarError):
+    with pytest.raises(JobSeekerError):
         job_from_url(ws, "https://example.com/careers/1")

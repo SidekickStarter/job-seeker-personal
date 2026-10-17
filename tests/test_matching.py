@@ -2,8 +2,8 @@ import copy
 
 import pytest
 
-from jobradar.matching import Matcher, hits, kw_regex
-from jobradar.models import Job
+from jobseeker.matching import Matcher, hits, kw_regex
+from jobseeker.models import Job
 
 
 def job(title="Senior Software Engineer", location="Remote - US", description="", mode="", track="backend"):

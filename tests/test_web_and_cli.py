@@ -1,12 +1,12 @@
 import pytest
 
-from jobradar import cli, coverletter
-from jobradar.applications import load_form
-from jobradar.demo import build_demo
-from jobradar.web import create_app
+from jobseeker import cli, coverletter
+from jobseeker.applications import load_form
+from jobseeker.demo import build_demo
+from jobseeker.web import create_app
 
 H = {"Host": "127.0.0.1:8765"}
-W = {**H, "X-JR": "1"}
+W = {**H, "X-JobSeeker": "1"}
 
 
 @pytest.fixture
@@ -48,9 +48,9 @@ def test_status_changes(client):
 
 def test_guards(client):
     assert client.get("/api/overview", headers={"Host": "evil.example"}).status_code == 403   # DNS rebinding
-    assert client.post("/api/mark", json={}, headers=H).status_code == 403                      # no X-JR header
+    assert client.post("/api/mark", json={}, headers=H).status_code == 403                      # no X-JobSeeker header
     assert client.get("/api/file", query_string={"path": "../../etc/passwd"}, headers=H).status_code == 403
-    assert client.post("/api/file", json={"path": "jobradar/cli.py", "text": ""}, headers=W).status_code == 403
+    assert client.post("/api/file", json={"path": "jobseeker/cli.py", "text": ""}, headers=W).status_code == 403
 
 
 def test_file_editing_validates_config(client, demo):

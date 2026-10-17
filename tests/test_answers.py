@@ -1,7 +1,7 @@
 import pytest
 
-from jobradar.answers import auto_answer, fmt, load_profile, pick_option
-from jobradar.workspace import JobRadarError
+from jobseeker.answers import auto_answer, fmt, load_profile, pick_option
+from jobseeker.workspace import JobSeekerError
 
 
 def q(label, type="select", options=("Yes", "No"), required=True, key="question_9"):
@@ -54,5 +54,5 @@ def test_fmt_blanks_out_empty_templates():
 
 def test_missing_profile_is_a_friendly_error(ws):
     ws.profile_path.unlink()
-    with pytest.raises(JobRadarError, match="jobradar init"):
+    with pytest.raises(JobSeekerError, match="jobseeker init"):
         load_profile(ws)

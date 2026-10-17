@@ -1,4 +1,4 @@
-# Your workspace (personal; see config.example.toml / profile.example.toml in jobradar/templates)
+# Your workspace (personal; see config.example.toml / profile.example.toml in jobseeker/templates)
 config.toml
 profile.toml
 *.db

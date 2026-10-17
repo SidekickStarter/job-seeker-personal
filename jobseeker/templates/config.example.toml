@@ -1,17 +1,17 @@
-# Job Radar config: which companies to watch, which jobs to keep, and how to score them.
-# `jobradar init` copies this to config.toml. Edit it here or in the web UI (Settings tab).
+# Job Seeker config: which companies to watch, which jobs to keep, and how to score them.
+# `jobseeker init` copies this to config.toml. Edit it here or in the web UI (Settings tab).
 # Regexes are TOML literal strings ('...'), so \b (word boundary) needs no escaping.
 
 [settings]
 min_score = 6                     # matches scoring below this are dropped
 max_workers = 8                   # boards fetched in parallel
-db_path = "job_radar.db"
+db_path = "jobseeker.db"
 out_dir = "digests"
 apps_dir = "applications"         # one folder per prepared application
 include_managers = false          # true to include Engineering Manager / Director titles
 allow_unknown_location = false
 company_domain_bonus = 3          # a company's own track gets this bonus
-auto_prep_min_score = 10          # `jobradar daily` preps new matches at/above this score...
+auto_prep_min_score = 10          # `jobseeker daily` preps new matches at/above this score...
 auto_prep_max = 10                # ...at most this many per run
 
 [filters]
@@ -28,7 +28,7 @@ title_exclude = [
 
 [location]
 # Remote roles pass anywhere in your country; hybrid/onsite roles must list a location in `metro`.
-# Keep only some work modes per run with `jobradar run --mode remote,hybrid`.
+# Keep only some work modes per run with `jobseeker run --mode remote,hybrid`.
 modes = ["remote", "hybrid", "onsite"]
 
 # Your commute area for hybrid/onsite roles (this example: New York City). Matched against each
@@ -72,8 +72,8 @@ bonus_keywords = ["java$", "python", "aws", "kafka", "distributed system", "micr
 penalty_keywords = ["golang", "rust$", "scala$"]   # stacks you'd rather avoid
 
 # ---------------------------------------------------------------- companies
-# ats: greenhouse | lever | ashby | workday. `jobradar add "<name or careers URL>"` finds the
-# board for you; `jobradar verify` checks them all. `track` is optional ("none" = no bonus).
+# ats: greenhouse | lever | ashby | workday. `jobseeker add "<name or careers URL>"` finds the
+# board for you; `jobseeker verify` checks them all. `track` is optional ("none" = no bonus).
 
 [[companies]]
 name = "Stripe"

@@ -29,4 +29,4 @@ def register(source: Source) -> Source:
     return source
 
 
-from jobradar.sources import ashby, greenhouse, lever, workday  # noqa: E402,F401  (registers them)
+from jobseeker.sources import ashby, greenhouse, lever, workday  # noqa: E402,F401  (registers them)

@@ -16,10 +16,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from jobradar.answers import load_profile
-from jobradar.applications import load_form, save_form
-from jobradar.util import safe
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker.answers import load_profile
+from jobseeker.applications import load_form, save_form
+from jobseeker.util import safe
+from jobseeker.workspace import JobSeekerError, Workspace
 
 LENGTHS = {"short": "150-200 words, 2-3 short paragraphs",
            "standard": "250-350 words, 3-4 paragraphs",
@@ -77,13 +77,13 @@ def draft_with_claude(prompt: str) -> str:
     """Run the prompt through the local `claude` CLI: no tools, no saved session, and outside any
     project folder so the draft isn't influenced by local files or memory."""
     if not shutil.which("claude"):
-        raise JobRadarError("Drafting uses the `claude` CLI (Claude Code), which isn't on PATH. Install it, "
+        raise JobSeekerError("Drafting uses the `claude` CLI (Claude Code), which isn't on PATH. Install it, "
                             "or write the letter yourself in cover_letter.md.")
     r = subprocess.run(["claude", "-p", "--tools", "", "--no-session-persistence", "--output-format", "text"],
                        input=prompt, capture_output=True, text=True, timeout=600, cwd=tempfile.gettempdir())
     letter = r.stdout.strip()
     if r.returncode or not letter:
-        raise JobRadarError(f"Claude didn't return a letter: {(r.stderr or r.stdout).strip()[:300]}")
+        raise JobSeekerError(f"Claude didn't return a letter: {(r.stderr or r.stdout).strip()[:300]}")
     return letter
 
 

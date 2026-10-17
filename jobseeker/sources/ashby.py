@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import re
 
-from jobradar import util
-from jobradar.browser import MARK_JS, as_list, click_labeled, combo_pick, fill_file, location_pick
-from jobradar.models import Job
-from jobradar.sources import Source, register
-from jobradar.util import join_locs, norm_mode, strip_html
+from jobseeker import util
+from jobseeker.browser import MARK_JS, as_list, click_labeled, combo_pick, fill_file, location_pick
+from jobseeker.models import Job
+from jobseeker.sources import Source, register
+from jobseeker.util import join_locs, norm_mode, strip_html
 
 
 def fetch_jobs(c, keep):

@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import datetime as dt
 
-from jobradar import util
-from jobradar.models import Job
-from jobradar.sources import Source, register
-from jobradar.util import join_locs, norm_mode, strip_html
+from jobseeker import util
+from jobseeker.models import Job
+from jobseeker.sources import Source, register
+from jobseeker.util import join_locs, norm_mode, strip_html
 
 
 def fetch_jobs(c, keep):

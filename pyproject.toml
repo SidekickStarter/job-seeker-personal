@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "job-radar"
+name = "job-seeker"
 version = "0.1.0"
 description = "Watch company job boards directly, score postings against your background, and prepare applications for review. Never auto-submits."
 readme = "README.md"
@@ -26,24 +26,24 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-web = ["flask>=3", "tomlkit>=0.11"]          # `jobradar web`, Settings editing, `jobradar add`
-fill = ["playwright>=1.40"]                   # `jobradar fill`, cover-letter PDFs
+web = ["flask>=3", "tomlkit>=0.11"]          # `jobseeker web`, Settings editing, `jobseeker add`
+fill = ["playwright>=1.40"]                   # `jobseeker fill`, cover-letter PDFs
 cover = ["pypdf>=4"]                          # read your resume PDF when drafting cover letters
-all = ["job-radar[web,fill,cover]"]
-dev = ["job-radar[web,cover]", "pytest>=8", "ruff>=0.5"]
+all = ["job-seeker[web,fill,cover]"]
+dev = ["job-seeker[web,cover]", "pytest>=8", "ruff>=0.5"]
 
 [project.scripts]
-jobradar = "jobradar.cli:main"
+jobseeker = "jobseeker.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/SidekickStarter/job-seeker-personal"
 Issues = "https://github.com/SidekickStarter/job-seeker-personal/issues"
 
 [tool.setuptools.packages.find]
-include = ["jobradar*"]
+include = ["jobseeker*"]
 
 [tool.setuptools.package-data]
-jobradar = ["templates/*.toml", "web/static/*"]
+jobseeker = ["templates/*.toml", "web/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -57,4 +57,4 @@ select = ["E", "F", "W", "I", "B", "UP"]
 ignore = ["E501", "E731", "B008", "B905"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["jobradar"]
+known-first-party = ["jobseeker"]

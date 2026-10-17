@@ -1,4 +1,4 @@
-# Job Radar
+# Job Seeker
 
 **Watch the companies you care about, straight from their job boards. Get the roles that fit you, scored and explained, with applications prepared for you to review. Nothing is ever submitted automatically.**
 
@@ -8,7 +8,7 @@
 
 ![Matches with a prepared application](docs/screenshots/matches.png)
 
-Job aggregators show stale reposts and hide which team is hiring. Job Radar reads company job
+Job aggregators show stale reposts and hide which team is hiring. Job Seeker reads company job
 boards (Greenhouse, Lever, Ashby, Workday) **directly**, the same data each company's careers
 page shows, and:
 
@@ -25,22 +25,22 @@ Everything runs locally; your profile and applications never leave your machine.
 ## Try it in 30 seconds
 
 ```bash
-pip install "job-radar[web] @ git+https://github.com/SidekickStarter/job-seeker-personal"
-jobradar demo        # opens the web UI on sample data (fictional companies and candidate)
+pip install "job-seeker[web] @ git+https://github.com/SidekickStarter/job-seeker-personal"
+jobseeker demo        # opens the web UI on sample data (fictional companies and candidate)
 ```
 
 ## Set up for yourself
 
 ```bash
-pip install "job-radar[all] @ git+https://github.com/SidekickStarter/job-seeker-personal"
+pip install "job-seeker[all] @ git+https://github.com/SidekickStarter/job-seeker-personal"
 playwright install chromium          # for browser pre-fill and cover-letter PDFs
 
 mkdir ~/job-search && cd ~/job-search
-jobradar init                        # creates config.toml and profile.toml here
-jobradar add "Stripe"                # or a careers page / any posting URL: finds the board
-jobradar run                         # fetch, filter, score; writes digests/digest_<date>.md
-jobradar web                         # everything else, in the browser
-jobradar schedule install --at 08:00 # weekday mornings (launchd on macOS, cron line elsewhere)
+jobseeker init                        # creates config.toml and profile.toml here
+jobseeker add "Stripe"                # or a careers page / any posting URL: finds the board
+jobseeker run                         # fetch, filter, score; writes digests/digest_<date>.md
+jobseeker web                         # everything else, in the browser
+jobseeker schedule install --at 08:00 # weekday mornings (launchd on macOS, cron line elsewhere)
 ```
 
 Then edit `profile.toml` (your details, resume path and answer rules) and `config.toml`
@@ -58,12 +58,12 @@ Then edit `profile.toml` (your details, resume path and answer rules) and `confi
 Or from the terminal:
 
 ```
-jobradar list                       # numbered matches with status
-jobradar prep 3                     # fetch #3's form, auto-answer it -> applications/<job>/form.toml
-jobradar fill 3                     # open it pre-filled in Chrome; you review and Submit
-jobradar cover generate 3           # draft cover_letter.md (uses the local `claude` CLI)
-jobradar mark 3 interviewing
-jobradar status
+jobseeker list                       # numbered matches with status
+jobseeker prep 3                     # fetch #3's form, auto-answer it -> applications/<job>/form.toml
+jobseeker fill 3                     # open it pre-filled in Chrome; you review and Submit
+jobseeker cover generate 3           # draft cover_letter.md (uses the local `claude` CLI)
+jobseeker mark 3 interviewing
+jobseeker status
 ```
 
 ## How it works
@@ -83,7 +83,7 @@ flowchart LR
     F --> C[Cover letter<br/>draft + PDF]
 ```
 
-- **Adapters** (`jobradar/sources/`) turn each board's public API into `Job` objects. Each one registers a `Source` with up to three capabilities: `fetch_jobs`, `fetch_form` (enables prep) and `fill` (enables browser pre-fill). Adding a board is one module: see [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Adapters** (`jobseeker/sources/`) turn each board's public API into `Job` objects. Each one registers a `Source` with up to three capabilities: `fetch_jobs`, `fetch_form` (enables prep) and `fill` (enables browser pre-fill). Adding a board is one module: see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Matching** (`matching.py`) infers work mode from structured fields when the board has them, and from location and description text otherwise ("3 days a week in the office" → hybrid, but "hybrid cloud" isn't). Then it applies your rule: remote must be in-country; hybrid/onsite must list an office in your metro.
 - **Scoring** is transparent keyword matching against *tracks* you define: title hits count 3×, description hits 1× (capped), with a bonus for your stack and a penalty for stacks you avoid. Every score comes with its reasons.
 - **Answers** come from ordered regex rules in `profile.toml` that map question labels to preference lists. Each preference is matched exact → prefix → substring against the form's real options.
@@ -98,7 +98,7 @@ flowchart LR
 
 ## Configuration reference
 
-`config.toml` (start from [`jobradar/templates/config.example.toml`](jobradar/templates/config.example.toml)):
+`config.toml` (start from [`jobseeker/templates/config.example.toml`](jobseeker/templates/config.example.toml)):
 
 | Section | What it controls |
 |---|---|
@@ -109,7 +109,7 @@ flowchart LR
 | `[stack]` | bonus and penalty keywords |
 | `[[companies]]` | `name`, `track`, `ats` and `slug` (or Workday `host`/`tenant`/`site`/`search`), `enabled` |
 
-`profile.toml` (from [`profile.example.toml`](jobradar/templates/profile.example.toml)): your details, work
+`profile.toml` (from [`profile.example.toml`](jobseeker/templates/profile.example.toml)): your details, work
 authorization, salary text, EEO policy (`decline` or leave for you), and `[[rules]]` mapping question
 patterns to answers. `{city}`, `{sponsorship}` and the like expand from your details.
 

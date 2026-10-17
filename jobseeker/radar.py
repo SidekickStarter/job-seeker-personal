@@ -7,12 +7,12 @@ import datetime as dt
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
-from jobradar.matching import Matcher
-from jobradar.models import Job
-from jobradar.sources import SOURCES
-from jobradar.store import open_db
-from jobradar.util import describe_error
-from jobradar.workspace import JobRadarError, Workspace
+from jobseeker.matching import Matcher
+from jobseeker.models import Job
+from jobseeker.sources import SOURCES
+from jobseeker.store import open_db
+from jobseeker.util import describe_error
+from jobseeker.workspace import JobSeekerError, Workspace
 
 MODES = ("remote", "hybrid", "onsite")
 
@@ -53,7 +53,7 @@ def run(ws: Workspace, show_all=False, track=None, min_score=None, modes=None) -
         modes = {m.strip().lower() for m in modes}
         bad = modes - set(MODES)
         if bad:
-            raise JobRadarError(f"unknown work mode {', '.join(sorted(bad))} (use remote, hybrid, onsite)")
+            raise JobSeekerError(f"unknown work mode {', '.join(sorted(bad))} (use remote, hybrid, onsite)")
         cfg = {**cfg, "location": {**cfg["location"], "modes": sorted(modes)}}
     m = Matcher(cfg)
     companies = [c for c in cfg["companies"] if c.get("enabled", True)]
@@ -85,7 +85,7 @@ def run(ws: Workspace, show_all=False, track=None, min_score=None, modes=None) -
 
 def render_digest(cfg, jobs, scanned, matched, new, errors, show_all):
     labels = {k: v.get("label", k) for k, v in cfg["tracks"].items()}
-    lines = [f"# Job Radar — {dt.date.today():%a %b %d, %Y}", "",
+    lines = [f"# Job Seeker — {dt.date.today():%a %b %d, %Y}", "",
              f"Scanned {scanned} postings · {matched} matches · **{new} new**", ""]
     if not jobs:
         lines.append("_No new matches today._")
@@ -101,7 +101,7 @@ def render_digest(cfg, jobs, scanned, matched, new, errors, show_all):
                       f"_Why:_ {j.why}", ""]
     if errors:
         lines += ["## Boards that failed", "",
-                  "Fix the slug in config.toml, or run `jobradar probe` to find the right board.", ""]
+                  "Fix the slug in config.toml, or run `jobseeker probe` to find the right board.", ""]
         lines += [f"- {n} ({ats}): {msg}" for n, ats, msg in sorted(errors)]
     return "\n".join(lines) + "\n"
 

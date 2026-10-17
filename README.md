@@ -2,7 +2,7 @@
 
 **Watch the companies you care about, straight from their job boards. Get the roles that fit you, scored and explained, with applications prepared for you to review. Nothing is ever submitted automatically.**
 
-[![CI](https://github.com/SidekickStarter/job-radar/actions/workflows/ci.yml/badge.svg)](https://github.com/SidekickStarter/job-radar/actions/workflows/ci.yml)
+[![CI](https://github.com/SidekickStarter/job-seeker-personal/actions/workflows/ci.yml/badge.svg)](https://github.com/SidekickStarter/job-seeker-personal/actions/workflows/ci.yml)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
@@ -25,14 +25,14 @@ Everything runs locally; your profile and applications never leave your machine.
 ## Try it in 30 seconds
 
 ```bash
-pip install "job-radar[web] @ git+https://github.com/SidekickStarter/job-radar"
+pip install "job-radar[web] @ git+https://github.com/SidekickStarter/job-seeker-personal"
 jobradar demo        # opens the web UI on sample data (fictional companies and candidate)
 ```
 
 ## Set up for yourself
 
 ```bash
-pip install "job-radar[all] @ git+https://github.com/SidekickStarter/job-radar"
+pip install "job-radar[all] @ git+https://github.com/SidekickStarter/job-seeker-personal"
 playwright install chromium          # for browser pre-fill and cover-letter PDFs
 
 mkdir ~/job-search && cd ~/job-search
@@ -123,7 +123,7 @@ patterns to answers. `{city}`, `{sponsorship}` and the like expand from your det
 ## Development
 
 ```bash
-git clone https://github.com/SidekickStarter/job-radar && cd job-radar
+git clone https://github.com/SidekickStarter/job-seeker-personal && cd job-seeker-personal
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 pytest            # offline; job board responses are fixtures

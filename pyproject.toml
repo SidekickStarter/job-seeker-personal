@@ -36,8 +36,8 @@ dev = ["job-radar[web,cover]", "pytest>=8", "ruff>=0.5"]
 jobradar = "jobradar.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/SidekickStarter/job-radar"
-Issues = "https://github.com/SidekickStarter/job-radar/issues"
+Homepage = "https://github.com/SidekickStarter/job-seeker-personal"
+Issues = "https://github.com/SidekickStarter/job-seeker-personal/issues"
 
 [tool.setuptools.packages.find]
 include = ["jobradar*"]
